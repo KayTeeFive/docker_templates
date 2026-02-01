@@ -14,7 +14,6 @@ services:
     tty: true
     privileged: true
     devices:
-      - /dev/kfd
       - /dev/dri
     #ports:
     #  - "${HOST_IP}:11434:11434"
@@ -36,7 +35,6 @@ services:
     tty: true
     privileged: true
     devices:
-      - /dev/kfd
       - /dev/dri
     volumes:
       - "${OLLAMA_DATA}:/root/.ollama"
