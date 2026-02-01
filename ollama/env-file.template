@@ -10,7 +10,17 @@ WEBUI_DATA=/home/dockeruser/.webui_data
 #OLLAMA_LLM_MODEL=gemma3:12b
 OLLAMA_LLM_MODEL=llama3.1:8b
 
+# Select AMD GPU by Rocm
+# 12.0.1 - RX 9070 XT
 HSA_OVERRIDE_GFX_VERSION=12.0.1
+# GPU Selection (comma separated list of GPUs, cmd: rocminfo).
+ROCR_VISIBLE_DEVICES=0
+
+# Select AMD GPU by VULKAN
+# 0 = AMD Radeon Graphics (RADV GFX1201) (radv) | uma: 0 ...
+# 1 = AMD Ryzen 7 9700X 8-Core Processor (RADV RAPHAEL_MENDOCINO) (radv) | uma: 1 ...
+# Disable all Vulkan GPUs by setting GGML_VK_VISIBLE_DEVICES=-1
+VK_VISIBLE_DEVICES=0
 
 # RAG SETTINGS
 QDRANT_DATA=/home/dockeruser/.qdrant_data
