@@ -34,8 +34,8 @@ fi
 
 echo "Starting service on http://${HOST_IP}:${HOST_PORT}..."
 
-docker rm ollama-rag-llm-model
-docker rm ollama-rag-embed-model
+docker rm ollama-rag-llm-model-vulkan
+docker rm ollama-rag-embed-model-vulkan
 docker rm ollama-rag-qdrant
 docker rm ollama-rag-anythingllm
 
