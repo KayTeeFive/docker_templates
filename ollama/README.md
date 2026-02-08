@@ -23,6 +23,7 @@ RAG contains:
 
 ### Scripts
 - `start.sh` - start Ollama with Open-WebUI
+- `start-vulkan.sh` - start Ollama with Open-WebUI using universal Vulkan API
 - `start-rag.sh` - start RAG on CPU
 - `start-rag-ipex-llm.sh` - start RAG for Intel Arc GPUs using IPEX/SYCL LLM toolkit 
 - `start-rag-rocm.sh` - start RAG for AMD GPUs using ROCm toolkit

@@ -1,17 +1,18 @@
 services:
-  ollama-llm-model:
+  ollama-llm-model-vulkan:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ollama-llm-model
-    hostname: ollama-llm-model
+    container_name: ollama-llm-model-vulkan
+    hostname: ollama-llm-model-vulkan
     environment:
         - OLLAMA_HOST="0.0.0.0:11434"
         - MODEL=${OLLAMA_LLM_MODEL}
+        - OLLAMA_VULKAN=1
+        - GGML_VK_VISIBLE_DEVICES=${VK_VISIBLE_DEVICES}     # Select GPU for VULKAN
     tty: true
     privileged: true
     devices:
-      - /dev/kfd
       - /dev/dri
     #ports:
     #  - "${HOST_IP}:11434:11434"
@@ -23,9 +24,9 @@ services:
     container_name: ollama-open-webui
     hostname: ollama-open-webui
     depends_on:
-      - ollama-llm-model
+      - ollama-llm-model-vulkan
     environment:
-      - 'OLLAMA_BASE_URL=http://ollama-llm-model:11434'
+      - 'OLLAMA_BASE_URL=http://ollama-llm-model-vulkan:11434'
       - 'WEBUI_SECRET_KEY='
     #extra_hosts:
     #  - host.docker.internal:host-gateway
