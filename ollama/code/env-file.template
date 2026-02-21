@@ -1,0 +1,21 @@
+HOST_IP=127.0.0.1
+HOST_PORT=11434
+
+OLLAMA_DATA=/home/dockeruser/.ollama_data
+
+# Models: https://ollama.com/models
+#OLLAMA_LLM_MODEL=deepseek-coder:6.7b
+#OLLAMA_LLM_MODEL=codellama:7b
+OLLAMA_LLM_MODEL=qwen2.5-coder:7b
+
+# Select AMD GPU by Rocm
+# 12.0.1 - RX 9070 XT
+HSA_OVERRIDE_GFX_VERSION=12.0.1
+# GPU Selection (comma separated list of GPUs, cmd: rocminfo).
+ROCR_VISIBLE_DEVICES=0
+
+# Select AMD GPU by VULKAN
+# 0 = AMD Radeon Graphics (RADV GFX1201) (radv) | uma: 0 ...
+# 1 = AMD Ryzen 7 9700X 8-Core Processor (RADV RAPHAEL_MENDOCINO) (radv) | uma: 1 ...
+# Disable all Vulkan GPUs by setting GGML_VK_VISIBLE_DEVICES=-1
+VK_VISIBLE_DEVICES=0

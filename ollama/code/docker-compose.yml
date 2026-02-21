@@ -1,0 +1,20 @@
+services:
+  ollama-llm-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ollama-llm-code
+    hostname: ollama-llm-code
+    environment:
+        - OLLAMA_HOST="0.0.0.0:11434"
+        - MODEL=${OLLAMA_LLM_MODEL}
+        - OLLAMA_VULKAN=1
+        - GGML_VK_VISIBLE_DEVICES=${VK_VISIBLE_DEVICES}     # Select GPU for VULKAN
+    tty: true
+    privileged: true
+    devices:
+      - /dev/dri
+    ports:
+      - "${HOST_IP}:${HOST_PORT}:11434"
+    volumes:
+      - "${OLLAMA_DATA}:/root/.ollama"
