@@ -1,0 +1,177 @@
+name: Local Config
+version: 1.1.0
+schema: v1
+
+models:
+
+################## LM Studio DEV server ##################
+
+  - name: "LMS: gpt-oss:20b"
+    provider: "openai"
+    model: "gpt-oss:20b"
+    apiBase: "http://127.0.0.1:1234/v1"
+    roles:
+      - apply
+      - chat
+      - edit
+      - summarize
+      - autocomplete
+
+  - name: "LMS: qwen2.5-coder:7b-instruct"
+    provider: "openai"
+    model: "qwen2.5-coder:7b-instruct"
+    apiBase: "http://127.0.0.1:1234/v1"
+    roles:
+      - apply
+      - chat
+      - edit
+      - summarize
+      - autocomplete
+
+################## Ollama.cpp server ##################
+
+  - name: "OLM: gpt-oss:20b"
+    provider: "openai"
+    model: "gpt-oss:20b"
+    apiBase: "http://127.0.0.1:11434/v1"
+    roles:
+      - apply
+      - chat
+      - edit
+      - summarize
+      - autocomplete
+    defaultCompletionOptions:
+      contextLength: 32768         # Limit context for stable inference on large model
+      #maxTokens: 1024              # Avoid generating extremely long completions
+      #temperature: 0.3             # Deterministic text for chat/code instructions
+      #topP: 0.95                   # Nucleus sampling for diverse but reasonable output
+      #topK: 50                     # Limit rare tokens to reduce incoherent outputs
+      #minP: 0.0                    # No minimum probability
+      #presencePenalty: 0.1         # Slightly discourage repeating known tokens
+      #frequencyPenalty: 0.2        # Prevent repeated lines/phrases
+      #stop: ["\n\n"]               # Basic stop token
+      #n: 1                         # Single completion per request
+      #reasoning: true              # Enable reasoning for multi-step chat / summarization
+      #reasoningBudgetTokens: 512   # Reserve tokens for reasoning calculations
+      #promptCaching: true          # Cache repeated prompts for faster responses
+      #stream: true                 # Stream tokens progressively to the client
+
+  - name: "OLM: deepseek-coder:6.7b"
+    provider: "openai"
+    model: "deepseek-coder:6.7b"
+    apiBase: "http://127.0.0.1:11434/v1"
+    capabilities:
+      - tool_use
+    roles:
+      - apply
+      - chat
+      - edit
+      - summarize
+    defaultCompletionOptions:
+      contextLength: 12288         # Big enough for complex code files
+      #maxTokens: 2048              # Allows long completion snippets
+      #temperature: 0.3             # Stable deterministic code suggestions
+      #topP: 0.95                   # Diverse, but reasonable token choices
+      #topK: 40                     # Reduce unlikely token generation
+      #minP: 0.0
+      #presencePenalty: 0.0         # Allow reusing function/variable names
+      #frequencyPenalty: 0.2        # Prevent repeated lines in autocomplete
+      #stop: ["\n\n", "</code>"]    # Stop tokens for code completion
+      #n: 1
+      #reasoning: false             # No reasoning needed for direct code generation
+      #reasoningBudgetTokens: 0
+      #promptCaching: true
+      #stream: true
+
+  - name: "OLM: qwen2.5-coder:7b"
+    provider: "openai"
+    model: "qwen2.5-coder:7b"
+    apiBase: "http://127.0.0.1:11434/v1"
+    roles:
+      - apply
+      - chat
+      - edit
+      - summarize
+    defaultCompletionOptions:
+      contextLength: 12288         # Optimal for 7B on 16GB VRAM Vulkan
+      #maxTokens: 2048              # Enough for large code blocks
+      #temperature: 0.3             # Stable deterministic coding results
+      #topP: 0.95                   # Diverse but controlled output
+      #topK: 40                     # Reduce unlikely tokens
+      #minP: 0.0
+      #presencePenalty: 0.0
+      #frequencyPenalty: 0.2        # Reduce repeated lines/phrases
+      #stop: ["\n\n", "</code>"]
+      #n: 1
+      #reasoning: false             # Disable reasoning for coding
+      #reasoningBudgetTokens: 0
+      #promptCaching: true
+      #stream: true
+
+  - name: "OLM: qwen2.5-coder:7b-autocomplete"
+    provider: "openai"
+    model: "qwen2.5-coder:7b"
+    apiBase: "http://127.0.0.1:11434/v1"
+    roles:
+      - autocomplete
+    defaultCompletionOptions:
+      contextLength: 12288         # Working context window for 7B models on your VRAM
+      #maxTokens: 2048              # Maximum tokens to generate in a single completion
+      #temperature: 0.3             # Controls randomness: lower = more deterministic
+      #topP: 0.95                   # Nucleus sampling, keeps cumulative probability up to 0.95
+      #topK: 40                     # Limits generation to top-K likely tokens
+      #minP: 0.0                    # Minimum probability for token selection (usually 0)
+      #presencePenalty: 0.0         # Penalizes new tokens based on presence in prompt (0 = disabled)
+      #frequencyPenalty: 0.2        # Penalizes repeated tokens slightly to reduce duplicate lines
+      #stop: ["\n\n", "</code>"]    # Stop tokens to terminate generation appropriately for code
+      #n: 1                         # Number of completions to generate per request
+      #reasoning: false             # Disable extra reasoning for pure code generation
+      #reasoningBudgetTokens: 0     # Number of tokens reserved for reasoning (0 since reasoning=false)
+      #promptCaching: true          # Enables caching of prompts to improve speed on repeated queries
+      #stream: true                 # Stream tokens to the client for live autocomplete in editor
+    autocompleteOptions:
+      maxPromptTokens: 4096
+      debounceDelay: 250
+      modelTimeout: 150
+      onlyMyCode: true
+      #template: "<|fim_prefix|>{{{ prefix }}}<|fim_suffix|>{{{ suffix }}}<|fim_middle|>"
+
+  - name: "OLM: qwen2.5-coder:1.5b"
+    provider: "openai"
+    model: "qwen2.5-coder:1.5b"
+    apiBase: "http://127.0.0.1:11434/v1"
+    roles:
+      - autocomplete
+    defaultCompletionOptions:
+      contextLength: 6144          # Smaller context for faster inference
+      #maxTokens: 1024              # Limit generated tokens to keep latency low
+      #temperature: 0.1             # Very deterministic autocomplete
+      #topP: 0.95                   # Keep sampling diverse but controlled
+      #topK: 40                     # Limit unlikely tokens for clean autocomplete
+      #frequencyPenalty: 0.1        # Slight repetition penalty
+      #stop: ["\n\n"]               # Stop token for short code fragments
+      #n: 1                         # One completion per request
+      #reasoning: false             # Disable reasoning to keep fast response
+      #promptCaching: true          # Cache prompts for faster repeated completions
+      #stream: true                 # Stream tokens progressively to the editor
+    autocompleteOptions:
+      maxPromptTokens: 4096
+      debounceDelay: 250
+      modelTimeout: 150
+      onlyMyCode: true
+
+  - name: "OLM: Local nomic-embed-text"
+    provider: "openai"
+    model: "nomic-embed-text"
+    apiBase: "http://127.0.0.1:11434/v1"
+    roles:
+      - embed
+
+context:
+  - provider: code
+  - provider: docs
+  - provider: diff
+  - provider: terminal
+  - provider: problems
+  - provider: folder
+  - provider: codebase
