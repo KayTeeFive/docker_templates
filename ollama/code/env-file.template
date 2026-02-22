@@ -8,6 +8,8 @@ OLLAMA_DATA=/home/dockeruser/.ollama_data
 #OLLAMA_LLM_MODEL=codellama:7b
 OLLAMA_LLM_MODEL=qwen2.5-coder:7b
 
+OLLAMA_CONTEXT_LENGTH=32384
+
 # Select AMD GPU by Rocm
 # 12.0.1 - RX 9070 XT
 HSA_OVERRIDE_GFX_VERSION=12.0.1
