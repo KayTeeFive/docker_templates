@@ -1,0 +1,56 @@
+services:
+  ollama-llm-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ollama-llm-code
+    hostname: ollama-llm-code
+    environment:
+      - OLLAMA_HOST="0.0.0.0:11434"                     # Address and port the Ollama server listens on
+      - MODEL=${OLLAMA_LLM_MODEL}                       # Default Ollama LLM model (will be automatically pulled if it doesn't exist locally)
+      - OLLAMA_VULKAN=1                                 # Enable Vulkan backend for GPU inference
+      - GGML_VK_VISIBLE_DEVICES=${VK_VISIBLE_DEVICES}   # Select which GPU(s) Vulkan should use
+      - OLLAMA_CONTEXT_LENGTH=${OLLAMA_CONTEXT_LENGTH}  # Maximum number of tokens the server will accept in a single prompt
+      - OLLAMA_FLASH_ATTENTION=true                     # Enables FlashAttention for faster prefill and lower memory bandwidth usage (if supported by the backend/GPU)
+      - OLLAMA_GPU_OVERHEAD=256                         # Reserves 256 MB of VRAM for safety to prevent out-of-memory during allocations
+      - OLLAMA_NUM_PARALLEL=1                           # Limits inference to a single parallel request to avoid KV-cache duplication and VRAM spikes
+      - OLLAMA_NEW_ENGINE=true                          # Forces the new Ollama inference engine instead of the legacy runner
+    tty: true
+    privileged: true
+    devices:
+      - /dev/dri
+    ports:
+      - "${HOST_IP}:${HOST_PORT}:11434"
+    volumes:
+      - "${OLLAMA_DATA}:/root/.ollama"
+    networks:
+      - ollama-llm-code
+
+  ollama-claude-code:
+    build:
+      context: ./claude
+      dockerfile: Dockerfile
+    container_name: ollama-claude-code
+    hostname: ollama-claude-code
+    tty: true
+    stdin_open: true
+    #privileged: true
+    depends_on:
+      - ollama-llm-code
+    environment:
+      ANTHROPIC_BASE_URL: "http://ollama-llm-code:11434"
+      ANTHROPIC_API_KEY: local
+      ANTHROPIC_AUTH_TOKEN: local
+    #ports:
+    #  - "${HOST_IP}:${HOST_PORT}:11434"
+    volumes:
+      #- "${OLLAMA_DATA}:/root/.ollama"
+      - .:/workspace
+    networks:
+      - ollama-llm-code
+
+
+networks:
+  ollama-llm-code:
+    name: ollama-llm-code
+    driver: bridge
