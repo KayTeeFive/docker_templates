@@ -157,6 +157,7 @@ All models use **Q4_K_M** or equivalent low-precision formats.
 | GPU                                                | HW | API | Performance                                   |
 |----------------------------------------------------|----|-----|-----------------------------------------------|
 | **AMD RX 9070 XT 16GB**                            | HW1 | Vulkan | **82.05 tok/sec · 1383 tokens · 0.66 s TTFT** |
+| **AMD RX 9070 XT 16GB (BOOST CLOCKS)**             | HW1 | Vulkan | **93.80 tok/sec · 1320 tokens · 0.42 s TTFT** |
 | AMD RX 9070 XT 16GB                                | HW1 | ROCm | 70.60 tok/sec · 1305 tokens · 0.30 s TTFT     |
 | Intel Arc Pro B50 16GB                             | HW2 | Vulkan | 14.35 tok/sec · 1582 tokens · 1.17 s TTFT     |
 | AMD Radeon Instinct MI25 HMB2 16GB (100W limit)    | HW2 | Vulkan | 20.99 tok/sec · 1564 tokens · 1.11 s TTFT     |
