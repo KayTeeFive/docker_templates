@@ -153,16 +153,17 @@ All models use **Q4_K_M** or equivalent low-precision formats.
 ---
 
 ### GPT-OSS – 20B (MXFP4, Low Reasoning)
+_Make sure that all layers offloaded into GPU_
 
-| GPU                                                | HW | API | Performance                                   |
-|----------------------------------------------------|----|-----|-----------------------------------------------|
-| **AMD RX 9070 XT 16GB**                            | HW1 | Vulkan | **82.05 tok/sec · 1383 tokens · 0.66 s TTFT** |
-| **AMD RX 9070 XT 16GB (BOOST CLOCKS)**             | HW1 | Vulkan | **93.80 tok/sec · 1320 tokens · 0.42 s TTFT** |
-| AMD RX 9070 XT 16GB                                | HW1 | ROCm | 70.60 tok/sec · 1305 tokens · 0.30 s TTFT     |
-| Intel Arc Pro B50 16GB                             | HW2 | Vulkan | 14.35 tok/sec · 1582 tokens · 1.17 s TTFT     |
-| AMD Radeon Instinct MI25 HMB2 16GB (100W limit)    | HW2 | Vulkan | 20.99 tok/sec · 1564 tokens · 1.11 s TTFT     |
-| AMD Radeon MI25 HMB2 16GB (vBIOS WX9100, 170W)     | HW2 | Vulkan | 24.77 tok/sec · 1320 tokens · 0.92 s TTFT     |
-| AMD Radeon MI25 (vBIOS WX9100, 170W, BOOST CLOCKS) | HW2 | Vulkan | 38.39 tok/sec · 1442 tokens · 0.11 s TTFT     |
+| GPU                                                                | HW | API | Performance                                    |
+|--------------------------------------------------------------------|----|-----|------------------------------------------------|
+| **AMD RX 9070 XT 16GB**                                            | HW1 | Vulkan | **140.44 tok/sec · 1531 tokens · 0.42 s TTFT** |
+| **AMD RX 9070 XT 16GB (BOOST CLOCKS)**                             | HW1 | Vulkan | **140.29 tok/sec · 1351 tokens · 0.05 s TTFT** |
+| AMD RX 9070 XT 16GB                                                | HW1 | ROCm | 102.76 tok/sec · 1660 tokens · 0.23 s TTFT     |
+| Intel Arc Pro B50 16GB                                             | HW2 | Vulkan | 16.21 tok/sec · 1392 tokens · 1.98 s TTFT      |
+| AMD Radeon Instinct MI25 HMB2 16GB (100W limit, GPU offload 23/24) | HW2 | Vulkan | 20.99 tok/sec · 1564 tokens · 1.11 s TTFT      |
+| AMD Radeon MI25 HMB2 16GB (vBIOS WX9100, 170W)                     | HW2 | Vulkan | 61.57 tok/sec · 1293 tokens · 0.63 s TTFT      |
+| AMD Radeon MI25 (vBIOS WX9100, 170W, BOOST CLOCKS)                 | HW2 | Vulkan | 64.00 tok/sec · 1293 tokens · 0.65 s TTFT      |
 
 
 ---
