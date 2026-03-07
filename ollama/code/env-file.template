@@ -6,7 +6,8 @@ OLLAMA_DATA=/home/dockeruser/.ollama_data
 # Models: https://ollama.com/models
 #OLLAMA_LLM_MODEL=deepseek-coder:6.7b
 #OLLAMA_LLM_MODEL=codellama:7b
-OLLAMA_LLM_MODEL=qwen2.5-coder:7b
+#OLLAMA_LLM_MODEL=qwen2.5-coder:7b
+OLLAMA_LLM_MODEL=gpt-oss:20
 
 OLLAMA_CONTEXT_LENGTH=32768
 
