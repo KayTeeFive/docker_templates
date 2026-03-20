@@ -13,6 +13,9 @@ echo "=====> Setting up firewall rules for VPN interface: $VPN_IF"
 echo "====>> Enabling NAT (MASQUERADE) on $VPN_IF"
 iptables -t nat -A POSTROUTING -o "$VPN_IF" -j MASQUERADE
 
+echo "====>> Clamping TCP MSS for VPN interface $VPN_IF"
+iptables -t mangle -A FORWARD -i "$VPN_IF" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
 echo "====>> Allowing established and related incoming connections"
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 

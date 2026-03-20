@@ -13,6 +13,9 @@ echo "=====> Cleaning up firewall rules for VPN interface: $VPN_IF"
 echo "====>> Removing NAT (MASQUERADE) rule on $VPN_IF"
 iptables -t nat -D POSTROUTING -o "$VPN_IF" -j MASQUERADE
 
+echo "====>> Removing Clamping TCP MSS for VPN interface $VPN_IF"
+iptables -t mangle -D FORWARD -i "$VPN_IF" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
 echo "====>> Removing rule: Accept established/related incoming connections"
 iptables -D INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
