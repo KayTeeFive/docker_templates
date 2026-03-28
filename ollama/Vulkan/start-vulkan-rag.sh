@@ -1,6 +1,8 @@
 #!/bin/bash
 
-cp -vf env-file.template .env
+if [[ ! -f .env ]]; then
+    cp -vf env-file.template .env
+fi
 
 echo "Updating .env file..."
 sed -e "s|/home/dockeruser|${HOME}|g" -i .env
@@ -34,9 +36,9 @@ fi
 
 echo "Starting service on http://${HOST_IP}:${HOST_PORT}..."
 
-docker rm ollama-rag-llm-model-ipex-llm
-docker rm ollama-rag-embed-model-ipex-llm
-docker rm ollama-rag-qdrant
-docker rm ollama-rag-anythingllm
+docker rm ollama-vulkan
+docker rm ollama-vulkan-embed
+docker rm ollama-qdrant
+docker rm ollama-anythingllm
 
-docker compose -f docker-compose-rag-ipex-llm.yml up
+docker compose -f docker-compose-vulkan-rag.yml up

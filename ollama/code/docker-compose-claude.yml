@@ -1,7 +1,7 @@
 services:
   ollama-llm-code:
     build:
-      context: .
+      context: ./ollama
       dockerfile: Dockerfile
     container_name: ollama-llm-code
     hostname: ollama-llm-code
