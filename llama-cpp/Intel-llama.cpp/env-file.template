@@ -1,0 +1,90 @@
+# ── Network ────────────────────────────────────────────────────────────────────
+# Bind to 127.0.0.1 if you're behind a reverse proxy (recommended).
+# Change to 0.0.0.0 only if you need direct LAN access.
+WEBUI_HOST_IP=0.0.0.0
+WEBUI_HOST_PORT=8080
+LLAMA_HOST_IP=0.0.0.0
+LLAMA_HOST_PORT=5000
+
+# ── Device ─────────────────────────────────────────────────────────────────────
+SYCL_DEVICE_FILTER="level_zero:gpu:0"
+# To get device list, run:
+# $ docker run -it --rm --device /dev/dri:/dev/dri ghcr.io/ggml-org/llama.cpp:server-intel --list-devices
+LLAMA_SYCL_DEVICE="SYCL0"
+
+# ── Model ──────────────────────────────────────────────────────────────────────
+# Directory on the HOST that contains your .gguf files.
+# The container sees this as /models (read-only).
+LLAMA_MODELS_DIR=/home/dockeruser/.llama_models
+
+# Optional: a human-readable name returned by /v1/models
+LLAMA_ALIAS=gpt-oss:20b
+#LLAMA_ALIAS='Qwen_2.5_Coder_14B'
+#LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct'
+
+# Extra CLI flags passed verbatim to llama-server, e.g. to load a model:
+#   LLAMA_DEFAULT_LLM_PRESET=--model /models/Mistral-7B-Q4_K_M.gguf
+# Or use a preset (downloads automatically, internet required):
+#   LLAMA_DEFAULT_LLM_PRESET=--gpt-oss-20b-default
+# NOTE: if using a preset, put --ctx-size AFTER it to override context length:
+LLAMA_DEFAULT_LLM_PRESET='--gpt-oss-20b-default'
+#LLAMA_DEFAULT_LLM_PRESET='--fim-qwen-14b-spec'
+#LLAMA_DEFAULT_LLM_PRESET='--fim-qwen-30b-default'
+
+# Number of seconds of idleness after which the server will sleep (unload model)
+LLAMA_SLEEP_IDLE=300
+
+# ── Context & VRAM ─────────────────────────────────────────────────────────────
+# Arc B50 has 16 GB. With q8_0 KV cache a 20B model at Q4_K_M uses ~12 GB
+# of model weights, leaving ~4 GB for KV. At q8_0 KV, 8 K ctx × 2 slots
+# needs roughly 2-3 GB, so 8192 is a safe starting point.
+# Increase to 16384 if you're loading a smaller model or using q4_0 KV.
+LLAMA_CONTEXT_LENGTH=16384
+
+LLAMA_UBATCH_LENGTH=512
+LLAMA_BATCH_LENGTH=2048
+LLAMA_CONT_BATCHING=true
+
+# 99 tells llama.cpp to load as many layers as fit in VRAM (recommended).
+# Set an exact number only if you're deliberately CPU-offloading some layers.
+LLAMA_GPU_LAYERS=99
+
+# Split the model across multiple GPUs:
+# - none: use one GPU only
+# - layer (default): split layers and KV across GPUs
+# - row: split rows across GPUs
+LLAMA_SPLIT_MODE=layer
+#LLAMA_SPLIT_MODE=row
+# Fraction of the model to offload to each GPU, comma-separated list of proportions
+LLAMA_TENSOR_SPLIT=1,1
+# The GPU to use for the model (with split-mode = none), or for
+# intermediate results and KV (with split-mode = row) (default: 0)
+LLAMA_MAIN_GPU=0
+
+# Concurrent inference slots. 2 is good for a single-user setup.
+# Increase to 4 if you have headroom (larger VRAM / smaller model).
+LLAMA_PARALLEL=2
+
+# CPU threads used for prompt processing on layers NOT on the GPU.
+# With GPU_LAYERS=99 this matters mainly for the embedding layer.
+LLAMA_CPU_THREADS=4
+
+# KV cache quantization.
+# q8_0 = lossless for most models, saves ~50% vs f16.
+# q4_0 = saves ~75% but may affect quality on some models.
+LLAMA_KV_TYPE_K=q8_0
+LLAMA_KV_TYPE_V=q8_0
+
+# Enable KV cache offloading
+LLAMA_KV_OFFLOAD=true
+# Single unified KV buffer shared across all sequences (default: enabled if number of slots is auto)
+LLAMA_KV_UNIFIED=true
+
+# ── Persistence ────────────────────────────────────────────────────────────────
+LLAMA_CACHE_DIR=/home/dockeruser/.llama_cache
+WEBUI_DATA=/home/dockeruser/.webui_data
+
+
+# ── Security ───────────────────────────────────────────────────────────────────
+# Generate with: openssl rand -hex 32
+WEBUI_SECRET_KEY=

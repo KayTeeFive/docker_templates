@@ -1,0 +1,111 @@
+services:
+
+  # ── llama.cpp inference server (Vulkan / AMD / INTEL / NVIDIA) ──────────────
+  llama-vulkan-llm:
+    image: ghcr.io/ggml-org/llama.cpp:server-vulkan
+    container_name: llama-vulkan-llm
+    hostname: llama-vulkan-llm
+    restart: unless-stopped
+    tty: true
+
+    # AMD GPU access via DRI + renderD node
+    devices:
+      - /dev/dri
+    # If explicit access to renderD128 is required (depends on host setup):
+    # group_add:
+    #   - video
+    #   - render
+
+    environment:
+      # ── Vulkan / AMD ────────────────────────────────────────────────────────
+      # AMD_VULKAN_ICD forces usage of RADV (Mesa) instead of AMDVLK.
+      # RADV currently has better support for RDNA4 (RX 9070 XT).
+      AMD_VULKAN_ICD: "RADV"
+      # If amdvlk is installed and you want to use it — comment the line above
+      # and uncomment the following:
+      # VK_ICD_FILENAMES: "/usr/share/vulkan/icd.d/amd_icd64.json"
+
+      # ── llama.cpp server env vars ───────────────────────────────────────────
+      LLAMA_ARG_HOST: "${LLAMA_HOST_IP:-0.0.0.0}"
+      LLAMA_ARG_PORT: "${LLAMA_HOST_PORT:-5000}"
+      LLAMA_ARG_CTX_SIZE: "${LLAMA_CONTEXT_LENGTH:-8192}"
+      LLAMA_ARG_UBATCH: "${LLAMA_UBATCH_LENGTH:-512}"
+      LLAMA_ARG_BATCH: "${LLAMA_BATCH_LENGTH:-2048}"
+      LLAMA_ARG_N_GPU_LAYERS: "${LLAMA_GPU_LAYERS:-99}"
+      LLAMA_ARG_SPLIT_MODE: "${LLAMA_SPLIT_MODE:-layer}"
+      LLAMA_ARG_TENSOR_SPLIT: "${LLAMA_TENSOR_SPLIT:-1,1}"
+      LLAMA_ARG_MAIN_GPU: "${LLAMA_MAIN_GPU:-0}"
+      LLAMA_ARG_N_PARALLEL: "${LLAMA_PARALLEL:-2}"
+      LLAMA_ARG_FLASH_ATTN: "on"
+      # q8_0 saves VRAM; for 16GB RX 9070 XT you can try f16
+      LLAMA_ARG_CACHE_TYPE_K: "${LLAMA_KV_TYPE_K:-q8_0}"
+      LLAMA_ARG_CACHE_TYPE_V: "${LLAMA_KV_TYPE_V:-q8_0}"
+      LLAMA_ARG_CONT_BATCHING: "${LLAMA_CONT_BATCHING:-true}"
+      LLAMA_ARG_KV_OFFLOAD: "${LLAMA_KV_OFFLOAD:-true}"
+      LLAMA_ARG_KV_UNIFIED: "${LLAMA_KV_UNIFIED:-true}"
+      LLAMA_ARG_MMAP: "true"
+      LLAMA_ARG_MODELS_DIR: "/models"
+
+    # --device Vulkan0 explicitly selects the first Vulkan GPU (RX 9070 XT)
+    # if only one GPU is present — this can be omitted
+    command: >
+      --device ${LLAMA_VULKAN_DEVICE:-Vulkan0}
+      --alias "${LLAMA_ALIAS:-local-model}"
+      --threads ${LLAMA_CPU_THREADS:-4}
+      --threads-batch ${LLAMA_CPU_THREADS:-4}
+      --sleep-idle-seconds ${LLAMA_SLEEP_IDLE:-300}
+      --warmup
+      ${LLAMA_DEFAULT_LLM_PRESET:-}
+      --ctx-size ${LLAMA_CONTEXT_LENGTH:-8192}
+      --ubatch-size ${LLAMA_UBATCH_LENGTH:-512}
+      --batch-size ${LLAMA_BATCH_LENGTH:-2048}
+      --gpu-layers ${LLAMA_GPU_LAYERS:-99}
+      --host ${LLAMA_HOST_IP:-0.0.0.0}
+      --port ${LLAMA_HOST_PORT:-5000}
+
+    ports:
+      - "${LLAMA_HOST_IP:-127.0.0.1}:${LLAMA_HOST_PORT:-5000}:5000"
+
+    volumes:
+      - "${LLAMA_MODELS_DIR}:/models:ro"
+      - "${LLAMA_CACHE_DIR:-llama_cache}:/root/.cache"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Open WebUI ──────────────────────────────────────────────────────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: llama-open-webui
+    hostname: llama-open-webui
+    restart: unless-stopped
+
+    depends_on:
+      - llama-vulkan-llm
+
+    environment:
+      OPENAI_API_BASE_URL: "http://llama-vulkan-llm:8013/v1"
+      OPENAI_API_KEY: "not-used"
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY}"
+      ENABLE_OLLAMA_API: "false"
+
+    ports:
+      - "${WEBUI_HOST_IP:-127.0.0.1}:${WEBUI_HOST_PORT:-8080}:8080"
+
+    volumes:
+      - "${WEBUI_DATA:-webui_data}:/app/backend/data"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  llama_cache:
+  webui_data:

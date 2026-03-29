@@ -1,0 +1,118 @@
+services:
+
+  # ── llama.cpp inference server (Intel SYCL / Intel Arc) ────────────────────
+  llama-sycl-llm:
+    image: ghcr.io/ggml-org/llama.cpp:server-intel
+    container_name: llama-sycl-llm
+    hostname: llama-sycl-llm
+    restart: unless-stopped
+    tty: true
+
+    # Intel GPU access
+    devices:
+      - /dev/dri
+
+    # llama.cpp reads these specific LLAMA_ARG_* names at startup.
+    # Do NOT put random names here expecting llama.cpp to read them —
+    # the binary only looks for the LLAMA_ARG_* env vars listed in --help.
+    environment:
+      # ── Intel / SYCL ───────────────────────────────────────────────────────
+      SYCL_DEVICE_FILTER: "level_zero:gpu:0"   # target Arc B50 specifically
+      SYCL_ENABLE_F16: "1"                     # native FP16 on Xe-HPG
+      ZES_ENABLE_SYSMAN: "1"                   # power / thermal readouts
+      # SYCL_ENABLE_GRAPH: "1"               # command-graph opt; enable when driver ≥ 1.3.29454
+
+      # ── llama.cpp server recognised env vars ───────────────────────────────
+      LLAMA_ARG_HOST: "${LLAMA_HOST_IP:-0.0.0.0}"
+      LLAMA_ARG_PORT: "${LLAMA_HOST_PORT:-5000}"
+      LLAMA_ARG_CTX_SIZE: "${LLAMA_CONTEXT_LENGTH:-8192}"
+      LLAMA_ARG_UBATCH: "${LLAMA_UBATCH_LENGTH:-512}"
+      LLAMA_ARG_BATCH: "${LLAMA_BATCH_LENGTH:-2048}"
+      LLAMA_ARG_N_GPU_LAYERS: "${LLAMA_GPU_LAYERS:-99}"       # 99 = push all layers
+      LLAMA_ARG_SPLIT_MODE: "${LLAMA_SPLIT_MODE:-layer}"
+      LLAMA_ARG_TENSOR_SPLIT: "${LLAMA_TENSOR_SPLIT:-1,1}"
+      LLAMA_ARG_MAIN_GPU: "${LLAMA_MAIN_GPU:-0}"
+      LLAMA_ARG_N_PARALLEL: "${LLAMA_PARALLEL:-2}"            # concurrent request slots
+      LLAMA_ARG_FLASH_ATTN: "on"                              # Arc B50 benefits a lot
+      LLAMA_ARG_CACHE_TYPE_K: "${LLAMA_KV_TYPE_K:-q8_0}"      # save VRAM; q8_0 is lossless
+      LLAMA_ARG_CACHE_TYPE_V: "${LLAMA_KV_TYPE_V:-q8_0}"
+      LLAMA_ARG_CONT_BATCHING: "${LLAMA_CONT_BATCHING:-true}"
+      LLAMA_ARG_KV_OFFLOAD: "${LLAMA_KV_OFFLOAD:-true}"       # keep KV on GPU
+      LLAMA_ARG_KV_UNIFIED: "${LLAMA_KV_UNIFIED:-true}"
+      LLAMA_ARG_MMAP: "true"
+      LLAMA_ARG_MODELS_DIR: "/models"
+
+    # CLI flags for things not (or not yet) exposed as env vars.
+    # --host / --port are set via env above; CLI flags here are for
+    # model selection and fine-tuning only.
+    command: >
+      --device ${LLAMA_SYCL_DEVICE:-SYCL0}
+      --alias "${LLAMA_ALIAS:-local-model}"
+      --threads ${LLAMA_CPU_THREADS:-4}
+      --threads-batch ${LLAMA_CPU_THREADS:-4}
+      --sleep-idle-seconds ${LLAMA_SLEEP_IDLE:-300}
+      --warmup
+      ${LLAMA_DEFAULT_LLM_PRESET:-}
+      --ctx-size ${LLAMA_CONTEXT_LENGTH:-8192}
+      --ubatch-size ${LLAMA_UBATCH_LENGTH:-512}
+      --batch-size ${LLAMA_BATCH_LENGTH:-2048}
+      --gpu-layers ${LLAMA_GPU_LAYERS:-99}
+      --host ${LLAMA_HOST_IP:-0.0.0.0}
+      --port ${LLAMA_HOST_PORT:-5000}
+
+    ports:
+      - "${LLAMA_HOST_IP:-127.0.0.1}:${LLAMA_HOST_PORT:-5000}:5000"
+
+    volumes:
+      # Map your model directory to /models inside the container.
+      # Set LLAMA_MODELS_DIR in .env; place .gguf files there.
+      - "${LLAMA_MODELS_DIR}:/models:ro"
+      # Separate cache dir so slot KV snapshots survive restarts.
+      - "${LLAMA_CACHE_DIR:-llama_cache}:/root/.cache"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s   # model load can take a while
+
+  # ── Open WebUI ──────────────────────────────────────────────────────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: llama-open-webui
+    hostname: llama-open-webui
+    restart: unless-stopped
+
+    depends_on:
+      - llama-sycl-llm
+      #llama-sycl-llm:
+      #  condition: service_healthy   # wait until llama.cpp actually loaded the model
+
+    environment:
+      # Point WebUI at the llama.cpp OpenAI-compatible endpoint.
+      # OPENAI_API_BASE_URL (not BASE_URL) is the correct variable name.
+      OPENAI_API_BASE_URL: "http://llama-sycl-llm:8013/v1"
+      OPENAI_API_KEY: "not-used"             # llama.cpp doesn't require one by default
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY}"
+      # Optional: disable Ollama backend so WebUI doesn't try localhost:11434
+      ENABLE_OLLAMA_API: "false"
+
+    ports:
+      - "${WEBUI_HOST_IP:-127.0.0.1}:${WEBUI_HOST_PORT:-8080}:8080"
+
+    volumes:
+      - "${WEBUI_DATA:-webui_data}:/app/backend/data"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  # Named volumes used as fallback when the env vars aren't set.
+  # If you set LLAMA_CACHE_DIR / WEBUI_DATA_DIR to absolute paths these are unused.
+  llama_cache:
+  webui_data:
