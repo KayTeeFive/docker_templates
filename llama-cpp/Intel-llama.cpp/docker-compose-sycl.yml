@@ -71,7 +71,7 @@ services:
       - "${LLAMA_CACHE_DIR:-llama_cache}:/root/.cache"
 
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -92,7 +92,7 @@ services:
     environment:
       # Point WebUI at the llama.cpp OpenAI-compatible endpoint.
       # OPENAI_API_BASE_URL (not BASE_URL) is the correct variable name.
-      OPENAI_API_BASE_URL: "http://llama-sycl-llm:8013/v1"
+      OPENAI_API_BASE_URL: "http://llama-rocm-llm:5000/v1"
       OPENAI_API_KEY: "not-used"             # llama.cpp doesn't require one by default
       WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY}"
       # Optional: disable Ollama backend so WebUI doesn't try localhost:11434
