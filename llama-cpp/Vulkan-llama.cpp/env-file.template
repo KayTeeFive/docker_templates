@@ -69,8 +69,14 @@ LLAMA_PARALLEL=2
 LLAMA_CPU_THREADS=8
 
 # KV cache quantization.
+# K (Keys) are more critical for accuracy: they affect attention scoring (where the model "looks").
+# V (Values) are less critical: they are the retrieved content after attention is computed.
+# Accuracy priority: K > V.
+# If reducing VRAM, degrade V first and keep K at higher precision.
 # q8_0 = lossless for most models, saves ~50% vs f16.
 # q4_0 = saves ~75% but may affect quality on some models.
+# allowed values: f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1
+# (default: f16)
 LLAMA_KV_TYPE_K=q8_0
 LLAMA_KV_TYPE_V=q8_0
 

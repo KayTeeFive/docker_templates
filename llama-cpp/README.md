@@ -2,6 +2,173 @@
 
 TBD
 
+# KV Cache Quantization
+
+This document describes KV cache quantization options in `llama.cpp` docker image and practical tuning guidelines for performance vs accuracy.
+
+## Allowed KV types
+
+KV cache supports the following formats:
+
+- `f32`
+- `f16`, `bf16`
+- `q8_0`
+- `q4_0`, `q4_1`, `iq4_nl`
+- `q5_0`, `q5_1`
+
+## Default High-Accuracy Baseline
+
+```bash
+--kv-type-k q8_0
+--kv-type-v q8_0
+```
+
+**Properties**
+- 🟢 Maximum accuracy
+- 🟢 Best long-context stability
+- 🔴 Highest VRAM usage
+- 🔴 Highest memory bandwidth pressure
+
+**Memory scaling (important)**
+- `Qwen3-Coder-30B-A3B-Instruct-Q8_0`, **Context**: `32768` tokens, KV cache: `q8_0/q8_0`
+    ```text
+    llama_kv_cache: size = 1632.00 MiB
+    K (q8_0): 816.00 MiB
+    V (q8_0): 816.00 MiB
+    ```
+- `Qwen3-Coder-30B-A3B-Instruct-Q8_0`, **Context**: `131072` tokens, KV cache: `q8_0/q8_0`
+    ```
+    llama_kv_cache: size = 6528.00 MiB
+    K (q8_0): 3264.00 MiB
+    V (q8_0): 3264.00 MiB
+    ```
+- `Qwen3-Coder-30B-A3B-Instruct-Q8_0`, **Context**: `131072` tokens, KV cache: `q8_0/q5_1`
+    ```
+    llama_kv_cache: size = 5568.00 MiB
+    K (q8_0): 3264.00 MiB
+    V (q5_1): 2304.00 MiB
+    ```
+- `Qwen3-Coder-30B-A3B-Instruct-Q8_0`, **Context**: `131072` tokens, KV cache: `q5_1/q5_1`
+    ```
+    llama_kv_cache: size = 4608.00 MiB
+    K (q5_1): 2304.00 MiB
+    V (q5_1): 2304.00 MiB
+    ```
+- `Qwen3-Coder-30B-A3B-Instruct-Q8_0`, **Context**: `131072` tokens, KV cache: `q4_0/q4_0`
+    ```
+    llama_kv_cache: size = 3456.00 MiB
+    K (q4_0): 1728.00 MiB
+    V (q4_0): 1728.00 MiB
+    ```
+
+> KV cache grows linearly with context length. The similar thing with quantization
+
+## KV Role Model (Critical Concept)
+- K (Keys) → controls WHERE attention is focused
+- V (Values) → controls WHAT content is retrieved
+
+**Accuracy priority**
+> K > V
+- Errors in K → wrong attention routing (major reasoning degradation)
+- Errors in V → reduced detail / noise in output
+
+## Balanced Configuration
+```
+--kv-type-k q8_0
+--kv-type-v q5_1
+```
+
+**Properties**
+- 🟢 High accuracy
+- 🟢 Good memory efficiency
+- 🟢 Stable long-context behavior
+- 🟢 Suitable for coding models
+
+**Why this works**
+- K kept relatively precise → preserves attention quality
+- V compressed more → safe degradation
+
+## Memory-Efficient Configuration
+```
+--kv-type-k q5_1
+--kv-type-v q5_1
+```
+
+Properties
+- 🟡 Medium accuracy
+- 🟢 Low VRAM usage
+- 🟢 Higher throughput
+- 🔴 Reduced long-context fidelity
+
+## Aggressive Compression (Experimental)
+```
+--kv-type-k q5_1
+--kv-type-v q4_1
+```
+
+**Properties**
+- 🔴 Lowest VRAM usage
+- 🔴 Potential reasoning degradation
+- 🟢 High memory efficiency
+
+## Key Insight
+
+> KV cache is primarily memory-bandwidth bound, not compute-bound.
+
+This means:
+- Lower bit quantization → real performance gain
+- Over-aggressive quantization → reasoning instability
+
+**Practical Rules**
+- K is more important than V
+- Always degrade V before K when optimizing memory
+- Keep K at higher precision for reasoning-heavy workloads
+- KV scaling is linear with context length
+
+## Multi-GPU Note (Dual MI25 / WX9100)
+
+**On dual GPU setups:**
+- KV cache may not be perfectly sharded
+- memory pressure can become asymmetric
+- bandwidth is often the bottleneck, not compute
+
+**Summary**
+```
+q8_0/q8_0 → maximum quality, highest cost
+q8_0/q5_1 → best real-world balance (recommended)
+q5_1/q5_1 → memory optimized
+q5_1/q4_1 → experimental compression
+```
+
+---
+
+## Download GGUF models from huggingface
+
+### Prepare ENV for download
+- setup python env: `python3 -m venv py_env`
+- install `huggingface_hub`: `pip install -U huggingface_hub`
+- login to `huggingface` if required: `hf login`
+- Download GGUF model, for example -  [Qwen3-Coder-30B-A3B-Instruct-GGUF](https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF)
+
+### Downloading
+
+With Quantization - [Qwen3-Coder-30B-A3B-Instruct-GGUF](https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF) with `Q4_K_M` and `Q6_K`:
+- test download (dry-run):
+    ```bash
+    hf download unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF --include "*Q6_K.gguf" --include "*Q4_K_M.gguf" --local-dir . --dry-run
+    ```
+- actual download:
+    ```bash
+    hf download unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF --include "*Q6_K.gguf" --include "*Q4_K_M.gguf" --local-dir .
+    ```
+
+Original without Quantization - [Qwen/Qwen3-Coder-30B-A3B-Instruct](https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct):
+```bash
+hf download Qwen/Qwen3-Coder-30B-A3B-Instruct --local-dir . --dry-run
+```
+
+---
+
 ### HELP
 ```text
 ----- common params -----
