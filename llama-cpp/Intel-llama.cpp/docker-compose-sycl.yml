@@ -32,7 +32,7 @@ services:
       LLAMA_ARG_SPLIT_MODE: "${LLAMA_SPLIT_MODE:-layer}"
       LLAMA_ARG_TENSOR_SPLIT: "${LLAMA_TENSOR_SPLIT:-1,1}"
       LLAMA_ARG_MAIN_GPU: "${LLAMA_MAIN_GPU:-0}"
-      LLAMA_ARG_N_PARALLEL: "${LLAMA_PARALLEL:-2}"            # concurrent request slots
+      LLAMA_ARG_N_PARALLEL: "${LLAMA_PARALLEL:-1}"            # concurrent request slots
       LLAMA_ARG_FLASH_ATTN: "on"                              # Arc B50 benefits a lot
       LLAMA_ARG_CACHE_TYPE_K: "${LLAMA_KV_TYPE_K:-q8_0}"      # save VRAM; q8_0 is lossless
       LLAMA_ARG_CACHE_TYPE_V: "${LLAMA_KV_TYPE_V:-q8_0}"
@@ -53,6 +53,7 @@ services:
       --sleep-idle-seconds ${LLAMA_SLEEP_IDLE:-300}
       --warmup
       ${LLAMA_DEFAULT_LLM_PRESET:-}
+      ${LLAMA_LLM_MODEL_ARG:-} ${LLAMA_LLM_MODEL_PATH:-}
       --ctx-size ${LLAMA_CONTEXT_LENGTH:-8192}
       --ubatch-size ${LLAMA_UBATCH_LENGTH:-512}
       --batch-size ${LLAMA_BATCH_LENGTH:-2048}
@@ -65,8 +66,8 @@ services:
 
     volumes:
       # Map your model directory to /models inside the container.
-      # Set LLAMA_MODELS_DIR in .env; place .gguf files there.
-      - "${LLAMA_MODELS_DIR}:/models:ro"
+      # Set LLAMA_MODELS_LOCAL_DIR in .env; place .gguf files there.
+      - "${LLAMA_MODELS_LOCAL_DIR}:/models:ro"
       # Separate cache dir so slot KV snapshots survive restarts.
       - "${LLAMA_CACHE_DIR:-llama_cache}:/root/.cache"
 

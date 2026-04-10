@@ -10,21 +10,28 @@ LLAMA_HOST_PORT=5000
 # To get device list, run:
 # $ docker run -it --rm --device /dev/dri:/dev/dri ghcr.io/ggml-org/llama.cpp:server-vulkan --list-devices
 LLAMA_VULKAN_DEVICE=Vulkan0
+#LLAMA_VULKAN_DEVICE=Vulkan1
+#LLAMA_VULKAN_DEVICE=Vulkan1,Vulkan2
 
 # ── Model ──────────────────────────────────────────────────────────────────────
 # Directory on the HOST that contains your .gguf files.
 # The container sees this as /models (read-only).
-LLAMA_MODELS_DIR=/home/dockeruser/.llama_models
+LLAMA_MODELS_LOCAL_DIR=/home/dockeruser/.llama_models
 
 # Optional: a human-readable name returned by /v1/models
 LLAMA_ALIAS=gpt-oss:20b
 #LLAMA_ALIAS='Qwen_2.5_Coder_14B'
 #LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct'
+#LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct_Q6_K'
+#LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct_Q4_K_M'
 
-# Extra CLI flags passed verbatim to llama-server, e.g. to load a model:
-#   LLAMA_DEFAULT_LLM_PRESET=--model /models/Mistral-7B-Q4_K_M.gguf
-# Or use a preset (downloads automatically, internet required):
-#   LLAMA_DEFAULT_LLM_PRESET=--gpt-oss-20b-default
+# ** SELECT LLAMA GGUF MODEL or USE PRESET
+# LLAMA GGUF MODEL
+#LLAMA_LLM_MODEL_ARG='--model'
+#LLAMA_LLM_MODEL_PATH='/models/Qwen3-Coder-30B-A3B-Instruct-Q6_K.gguf'
+#LLAMA_LLM_MODEL_PATH='/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf'
+
+# LLAMA GGUF PRESET (downloads automatically, internet required):
 # NOTE: if using a preset, put --ctx-size AFTER it to override context length:
 LLAMA_DEFAULT_LLM_PRESET='--gpt-oss-20b-default'
 #LLAMA_DEFAULT_LLM_PRESET='--fim-qwen-14b-spec'
@@ -34,11 +41,24 @@ LLAMA_DEFAULT_LLM_PRESET='--gpt-oss-20b-default'
 LLAMA_SLEEP_IDLE=300
 
 # ── Context & VRAM ─────────────────────────────────────────────────────────────
-# AMD RX 9070 XT has 16 GB. With q8_0 KV cache a 20B model at Q4_K_M uses ~12 GB
-# of model weights, leaving ~4 GB for KV. At q8_0 KV, 8 K ctx × 2 slots
-# needs roughly 2-3 GB, so 8192 is a safe starting point.
-# Increase to 16384 if you're loading a smaller model or using q4_0 KV.
+# MODEL                        | Quant  | KV Quant | Context | KV Cache | Model VRAM | Total VRAM
+# -----------------------------| ------ | -------- | ------- | -------- | ---------- | ----------
+# GPT-OSS:20B                  | mxfp4  | q8_0     | 16k     |  210 MiB | ~12 GiB    | ~12.2 GiB
+# GPT-OSS:20B                  | mxfp4  | q8_0     | 131k    | 1640 MiB | ~12 GiB    | ~13.6 GiB
+#
+# Qwen3-Coder-30B-A3B-Instruct | Q4_K_M | q8_0     | 16k     |  816 MiB | 17–18 GiB  | ~18–19 GiB
+# Qwen3-Coder-30B-A3B-Instruct | Q4_K_M | q8_0     | 32k     | 1632 MiB | 17–18 GiB  | ~19–20 GiB
+# Qwen3-Coder-30B-A3B-Instruct | Q4_K_M | q8_0     | 65k     | 3264 MiB | 17–18 GiB  | ~21–22 GiB
+# Qwen3-Coder-30B-A3B-Instruct | Q4_K_M | q8_0     | 131k    | 6528 MiB | 17–18 GiB  | ~24–25 GiB
+#
+# Qwen3-Coder-30B-A3B-Instruct | Q6_K   | q8_0     | 16k     |  816 MiB | ~25 GiB    | ~26 GiB
+# Qwen3-Coder-30B-A3B-Instruct | Q6_K   | q8_0     | 32k     | 1632 MiB | ~25 GiB    | ~27 GiB
+# Qwen3-Coder-30B-A3B-Instruct | Q6_K   | q8_0     | 65k     | 3264 MiB | ~25 GiB    | ~29 GiB
+# Qwen3-Coder-30B-A3B-Instruct | Q6_K   | q8_0     | 131k    | 6528 MiB | ~25 GiB    | ~32 GiB
 LLAMA_CONTEXT_LENGTH=16384
+#LLAMA_CONTEXT_LENGTH=32768
+#LLAMA_CONTEXT_LENGTH=65536
+#LLAMA_CONTEXT_LENGTH=131072
 
 LLAMA_UBATCH_LENGTH=512
 LLAMA_BATCH_LENGTH=2048
@@ -60,9 +80,9 @@ LLAMA_TENSOR_SPLIT=1,1
 # intermediate results and KV (with split-mode = row) (default: 0)
 LLAMA_MAIN_GPU=0
 
-# Concurrent inference slots. 2 is good for a single-user setup.
+# Concurrent inference slots. 2 is good for a single-user setup (affects KV cache).
 # Increase to 4 if you have headroom (larger VRAM / smaller model).
-LLAMA_PARALLEL=2
+LLAMA_PARALLEL=1
 
 # CPU threads used for prompt processing on layers NOT on the GPU.
 # With GPU_LAYERS=99 this matters mainly for the embedding layer.

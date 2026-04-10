@@ -6,6 +6,22 @@ TBD
 
 This document describes KV cache quantization options in `llama.cpp` docker image and practical tuning guidelines for performance vs accuracy.
 
+| MODEL                                   | Quant  | KV Quant | Context | KV Cache | Model VRAM | Total VRAM |
+|-----------------------------------------|--------|----------|---------|----------|------------|------------|
+| **GPT-OSS:20B**                         |        |          |         |          |            |            |
+| GPT-OSS:20B                             | mxfp4  | q8_0     | 16k     | 210 MiB  | ~12 GiB    | ~12.2 GiB  |
+| GPT-OSS:20B                             | mxfp4  | q8_0     | 131k    | 1640 MiB | ~12 GiB    | ~13.6 GiB  |
+| **Qwen3-Coder-30B-A3B-Instruct Q4_K_M** |        |          |         |          |            |            |
+| Qwen3-Coder-30B-A3B-Instruct            | Q4_K_M | q8_0     | 16k     | 816 MiB  | 17–18 GiB  | ~18–19 GiB |
+| Qwen3-Coder-30B-A3B-Instruct            | Q4_K_M | q8_0     | 32k     | 1632 MiB | 17–18 GiB  | ~19–20 GiB |
+| Qwen3-Coder-30B-A3B-Instruct            | Q4_K_M | q8_0     | 65k     | 3264 MiB | 17–18 GiB  | ~21–22 GiB |
+| Qwen3-Coder-30B-A3B-Instruct            | Q4_K_M | q8_0     | 131k    | 6528 MiB | 17–18 GiB  | ~24–25 GiB |
+| **Qwen3-Coder-30B-A3B-Instruct Q6_K**   |        |          |         |          |            |            | 
+| Qwen3-Coder-30B-A3B-Instruct            | Q6_K   | q8_0     | 16k     | 816 MiB  | ~25 GiB    | ~26 GiB    |
+| Qwen3-Coder-30B-A3B-Instruct            | Q6_K   | q8_0     | 32k     | 1632 MiB | ~25 GiB    | ~27 GiB    |
+| Qwen3-Coder-30B-A3B-Instruct            | Q6_K   | q8_0     | 65k     | 3264 MiB | ~25 GiB    | ~29 GiB    |
+| Qwen3-Coder-30B-A3B-Instruct            | Q6_K   | q8_0     | 131k    | 6528 MiB | ~25 GiB    | ~32 GiB    |
+
 ## Allowed KV types
 
 KV cache supports the following formats:
