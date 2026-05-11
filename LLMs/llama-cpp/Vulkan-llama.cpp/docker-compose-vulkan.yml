@@ -24,6 +24,9 @@ services:
       # If amdvlk is installed and you want to use it — comment the line above
       # and uncomment the following:
       # VK_ICD_FILENAMES: "/usr/share/vulkan/icd.d/amd_icd64.json"
+      # For Intel GPUs try next:
+      # AMD_VULKAN_ICD: ''
+      # VK_ICD_FILENAMES: "/usr/share/vulkan/icd.d/intel_icd.json:/usr/share/vulkan/icd.d/intel_hasvk_icd.json"
 
       # ── llama.cpp server env vars ───────────────────────────────────────────
       LLAMA_ARG_HOST: "${LLAMA_HOST_IP:-0.0.0.0}"
