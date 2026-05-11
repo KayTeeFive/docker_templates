@@ -30,12 +30,16 @@ LLAMA_ALIAS=gpt-oss:20b
 #LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct'
 #LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct_Q6_K'
 #LLAMA_ALIAS='Qwen_3_Coder_30B_A3B_Instruct_Q4_K_M'
+#LLAMA_ALIAS='gemma_4_31B_it_Q6_K'
+#LLAMA_ALIAS='gemma_4_26B_A4B_it_Q6_K'
 
 # ** SELECT LLAMA GGUF MODEL or USE PRESET
 # LLAMA GGUF MODEL
 #LLAMA_LLM_MODEL_ARG='--model'
 #LLAMA_LLM_MODEL_PATH='/models/Qwen3-Coder-30B-A3B-Instruct-Q6_K.gguf'
 #LLAMA_LLM_MODEL_PATH='/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf'
+#LLAMA_LLM_MODEL_PATH='/models/gemma-4-31B-it-Q6_K.gguf'
+#LLAMA_LLM_MODEL_PATH='/models/gemma-4-26B-A4B-it-Q6_K.gguf'
 
 # LLAMA GGUF PRESET (downloads automatically, internet required):
 # NOTE: if using a preset, put --ctx-size AFTER it to override context length:
