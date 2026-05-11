@@ -21,7 +21,7 @@ services:
       # GFX1201 = RX 9070 XT (RDNA4). ROCm may not list it officially yet,
       # so we override the GFX version to the closest supported target.
       # GFX1100 = RX 7900 XT (RDNA3) — works well as a fallback for RDNA4.
-      HSA_OVERRIDE_GFX_VERSION: "${ROCM_GFX_VERSION:-12.0.1}"
+      HSA_OVERRIDE_GFX_VERSION: "${ROCM_GFX_VERSION:-}"
       # Force ROCm to use only GPU 0 (change index if needed)
       ROCR_VISIBLE_DEVICES: "${ROCM_VISIBLE_DEVICES:-0}"
       # Disable CPU fallback — fail fast if GPU offload breaks
