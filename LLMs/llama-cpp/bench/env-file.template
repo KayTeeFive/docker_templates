@@ -37,7 +37,7 @@ BENCH_UBATCH_SIZE=512
 # ── Benchmark scenarios ────────────────────────────────────────────────────────
 # Comma-separated list of prompt-token counts tested (PP = prompt-processing).
 # These values are passed to llama-bench as -p.
-BENCH_PP_TOKENS=128,512,2048,4096,8192,16384,65536
+BENCH_PP_TOKENS=128,512,2048,4096,8192,16384
 
 # Comma-separated list of generation-token counts tested (TG = token-generation).
 # These values are passed to llama-bench as -n.
