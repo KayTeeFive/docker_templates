@@ -1,0 +1,76 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  llama.cpp  —  INFERENCE BENCHMARK  —  env-file.template
+#  Copy to .env and edit before running any bench-*.sh script.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Model ──────────────────────────────────────────────────────────────────────
+# Directory on the HOST that contains your .gguf files.
+# The container sees this as /models (read-only).
+BENCH_MODELS_DIR=/home/dockeruser/.llama_models
+
+# GGUF model file name (relative to BENCH_MODELS_DIR).
+# Examples:
+#   gpt-oss-20b-mxfp4.gguf
+#   Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf
+#   Qwen3-Coder-30B-A3B-Instruct-Q6_K.gguf
+BENCH_MODEL_FILE=gpt-oss-20b-mxfp4.gguf
+
+# Cache dir (model weights are cached here between runs, speeds up re-runs).
+BENCH_CACHE_DIR=/home/dockeruser/.llama_cache
+
+# ── GPU layers ─────────────────────────────────────────────────────────────────
+# 99 = offload all layers to VRAM.
+BENCH_GPU_LAYERS=99
+
+# ── KV-cache quantization ─────────────────────────────────────────────────────
+# Allowed values: f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1
+BENCH_KV_TYPE_K=q8_0
+BENCH_KV_TYPE_V=q8_0
+
+# ── CPU threads (for non-GPU layers, e.g. embedding) ──────────────────────────
+BENCH_CPU_THREADS=8
+
+# ── Batch sizes ────────────────────────────────────────────────────────────────
+BENCH_BATCH_SIZE=2048
+BENCH_UBATCH_SIZE=512
+
+# ── Benchmark scenarios ────────────────────────────────────────────────────────
+# Comma-separated list of prompt-token counts tested (PP = prompt-processing).
+# These values are passed to llama-bench as -p.
+BENCH_PP_TOKENS=128,512,2048,4096,8192,16384,65536
+
+# Comma-separated list of generation-token counts tested (TG = token-generation).
+# These values are passed to llama-bench as -n.
+BENCH_TG_TOKENS=128,512
+
+# Number of repetitions per scenario (higher = more stable average, slower run).
+BENCH_REPETITIONS=3
+
+# Output format for llama-bench: md (Markdown table), json, csv, sql
+BENCH_OUTPUT_FORMAT=md
+
+# ── ROCm / AMD ────────────────────────────────────────────────────────────────
+# GFX version override — needed for RDNA4 (RX 9070 XT = GFX 12.0.1).
+# Try 11.0.0 as fallback for RDNA3.
+ROCM_GFX_VERSION=12.0.1
+# GPU index to use (0 = first AMD GPU).
+ROCM_VISIBLE_DEVICES=0
+
+# ── Intel / SYCL ──────────────────────────────────────────────────────────────
+# Target a specific Level Zero GPU.
+SYCL_DEVICE_FILTER=level_zero:gpu:0
+# llama-bench device selector.
+BENCH_SYCL_DEVICE=SYCL0
+
+# ── Vulkan ────────────────────────────────────────────────────────────────────
+# Vulkan device selector passed to --device (e.g. Vulkan0, Vulkan1).
+BENCH_VULKAN_DEVICE=Vulkan0
+# Force RADV (Mesa) Vulkan driver — best for RDNA4.
+# Set to '' (empty) to let the system choose, or to 'AMDVLK' for the proprietary driver.
+AMD_VULKAN_ICD=RADV
+
+# ── Results ────────────────────────────────────────────────────────────────────
+# Directory where result files are written (created automatically).
+# Relative paths are resolved from the bench/ directory.
+BENCH_RESULTS_DIR=./results
+
