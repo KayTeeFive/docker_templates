@@ -37,13 +37,15 @@ mkdir -p "$BENCH_RESULTS_DIR"
 
 # ── parse CLI args ────────────────────────────────────────────────────────────
 PULL_FLAG=""
+VERBOSE_FLAG=""
 BACKENDS=()
 
 for arg in "$@"; do
     case "$arg" in
-        --no-cache) PULL_FLAG="--no-cache" ;;
+        --no-cache)        PULL_FLAG="--no-cache" ;;
+        --verbose|-v)      VERBOSE_FLAG="--verbose" ;;
         rocm|intel|vulkan) BACKENDS+=("$arg") ;;
-        *) die "Unknown argument: $arg  (valid: rocm intel vulkan --no-cache)" ;;
+        *) die "Unknown argument: $arg  (valid: rocm intel vulkan --no-cache --verbose/-v)" ;;
     esac
 done
 
@@ -63,7 +65,7 @@ for backend in "${BACKENDS[@]}"; do
     script="${SCRIPT_DIR}/bench-${backend}.sh"
     [[ -x "$script" ]] || die "Script not found or not executable: $script"
 
-    if bash "$script" $PULL_FLAG; then
+    if bash "$script" $PULL_FLAG $VERBOSE_FLAG; then
         PASSED+=("$backend")
     else
         log "⚠  Backend '${backend}' failed — continuing with remaining backends."

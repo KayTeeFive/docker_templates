@@ -42,8 +42,11 @@ BENCH_TG_TOKENS="${BENCH_TG_TOKENS:-128,512}"
 BENCH_REPETITIONS="${BENCH_REPETITIONS:-3}"
 BENCH_OUTPUT_FORMAT="${BENCH_OUTPUT_FORMAT:-md}"
 BENCH_RESULTS_DIR="${BENCH_RESULTS_DIR:-${SCRIPT_DIR}/results}"
-ROCM_GFX_VERSION="${ROCM_GFX_VERSION:-}"
+ROCM_GFX_VERSION="${ROCM_GFX_VERSION:-12.0.1}"
 ROCM_VISIBLE_DEVICES="${ROCM_VISIBLE_DEVICES:-0}"
+BENCH_SPLIT_MODE="${BENCH_SPLIT_MODE:-none}"
+BENCH_TENSOR_SPLIT="${BENCH_TENSOR_SPLIT:-1/1}"
+BENCH_MAIN_GPU="${BENCH_MAIN_GPU:-0}"
 
 # ── validate ──────────────────────────────────────────────────────────────────
 [[ -n "$BENCH_MODEL_FILE" ]] || die "BENCH_MODEL_FILE is not set in .env"
@@ -57,15 +60,34 @@ TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RESULT_FILE="${BENCH_RESULTS_DIR}/bench_${BACKEND}_${TIMESTAMP}.${BENCH_OUTPUT_FORMAT}"
 
 # ── optional image pull ───────────────────────────────────────────────────────
-if [[ "${1:-}" == "--no-cache" ]]; then
+PULL=0; VERBOSE=0
+for _arg in "$@"; do
+    case "$_arg" in
+        --no-cache)   PULL=1 ;;
+        --verbose|-v) VERBOSE=1 ;;
+    esac
+done
+if (( PULL )); then
     log "Pulling latest image: $IMAGE"
     docker pull "$IMAGE"
 fi
+
+# ── build split flags (-ts separator must be '/', comma triggers separate runs) ─
+SPLIT_FLAGS=(-sm "${BENCH_SPLIT_MODE}")
+if [[ "${BENCH_SPLIT_MODE}" != "none" ]]; then
+    SPLIT_FLAGS+=(-ts "${BENCH_TENSOR_SPLIT}" -mg "${BENCH_MAIN_GPU}")
+fi
+
+# ── verbose/progress flag ─────────────────────────────────────────────────────
+PROGRESS_FLAGS=()
+(( VERBOSE )) && PROGRESS_FLAGS=(--progress)
 
 # ── run llama-bench ───────────────────────────────────────────────────────────
 log "Backend  : ROCm (AMD GPU)"
 log "Image    : $IMAGE"
 log "Model    : ${BENCH_MODEL_FILE}"
+log "Visible  : ${ROCM_VISIBLE_DEVICES}  (GFX VERSION: ${ROCM_GFX_VERSION})"
+log "Split    : mode=${BENCH_SPLIT_MODE}  tensor=${BENCH_TENSOR_SPLIT}  main-gpu=${BENCH_MAIN_GPU}"
 log "PP tokens: ${BENCH_PP_TOKENS}"
 log "TG tokens: ${BENCH_TG_TOKENS}"
 log "KV cache : K=${BENCH_KV_TYPE_K}  V=${BENCH_KV_TYPE_V}"
@@ -87,12 +109,14 @@ docker run --rm \
     --bench \
         -m "/models/${BENCH_MODEL_FILE}" \
         -ngl "${BENCH_GPU_LAYERS}" \
+        "${SPLIT_FLAGS[@]}" \
         -t "${BENCH_CPU_THREADS}" \
-        -b "${BENCH_BATCH_SIZE}" \
+        --batch-size "${BENCH_BATCH_SIZE}" \
         -ub "${BENCH_UBATCH_SIZE}" \
         -ctk "${BENCH_KV_TYPE_K}" \
         -ctv "${BENCH_KV_TYPE_V}" \
-        -fa 1 \
+        -fa on \
+        "${PROGRESS_FLAGS[@]}" \
         -p "${BENCH_PP_TOKENS}" \
         -n "${BENCH_TG_TOKENS}" \
         -r "${BENCH_REPETITIONS}" \

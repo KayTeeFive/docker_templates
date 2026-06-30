@@ -3,38 +3,39 @@
 Benchmark suite for measuring **prompt-processing (PP)** and
 **token-generation (TG)** throughput across the three llama.cpp GPU backends:
 
-| Script            | Backend                       | Docker image                             |
-|-------------------|-------------------------------|------------------------------------------|
-| `bench-rocm.sh`   | AMD ROCm                      | `ghcr.io/ggml-org/llama.cpp:full-rocm`   |
-| `bench-intel.sh`  | Intel SYCL (Arc / Xe)         | `ghcr.io/ggml-org/llama.cpp:full-intel`  |
+| Script | Backend | Docker image |
+|---|---|---|
+| `bench-rocm.sh` | AMD ROCm | `ghcr.io/ggml-org/llama.cpp:full-rocm` |
+| `bench-intel.sh` | Intel SYCL (Arc / Xe) | `ghcr.io/ggml-org/llama.cpp:full-intel` |
 | `bench-vulkan.sh` | Vulkan (AMD / Intel / NVIDIA) | `ghcr.io/ggml-org/llama.cpp:full-vulkan` |
-| `bench-all.sh`    | all of the above              | —                                        |
+| `bench-all.sh` | all of the above | — |
 
 ---
 
 ## Quick start
 
 ```bash
-# 1. Create .env from the template
-cp env-file.template .env
+# .env is created automatically from the template on the first run.
+# Just set the two required variables and go:
+./bench-vulkan.sh       # creates .env, then fails with "BENCH_MODEL_FILE not set"
 
-# 2. Fill in at minimum:
-#    BENCH_MODELS_DIR — path to the directory with your .gguf files
-#    BENCH_MODEL_FILE — file name of the model to benchmark
+# Edit the generated .env:
 $EDITOR .env
+# BENCH_MODELS_DIR=/home/user/.llama_models
+# BENCH_MODEL_FILE=gpt-oss-20b-mxfp4.gguf
 
-# 3. Run one backend
-./bench-rocm.sh       # AMD ROCm
-./bench-intel.sh      # Intel SYCL
-./bench-vulkan.sh     # Vulkan
+# Re-run
+./bench-rocm.sh         # AMD ROCm
+./bench-intel.sh        # Intel SYCL
+./bench-vulkan.sh       # Vulkan
 
-# 4. Or run all backends sequentially and get a combined report
+# All backends sequentially + combined report
 ./bench-all.sh
 
-# Pull fresh Docker images before benchmarking (optional)
+# Pull fresh Docker images before benchmarking
 ./bench-all.sh --no-cache
 
-# Run only specific backends
+# Only specific backends
 ./bench-all.sh rocm vulkan
 ```
 
@@ -45,28 +46,63 @@ Results are written to `results/` as Markdown tables (configurable via
 
 ## Configuration (`env-file.template` → `.env`)
 
-| Variable               | Default                          | Description                                               |
-|------------------------|----------------------------------|-----------------------------------------------------------|
-| `BENCH_MODELS_DIR`     | `/home/dockeruser/.llama_models` | Host directory containing `.gguf` files                   |
-| `BENCH_MODEL_FILE`     | *(required)*                     | File name of the model to benchmark                       |
-| `BENCH_CACHE_DIR`      | `/home/dockeruser/.llama_cache`  | Model weight cache (speeds up re-runs)                    |
-| `BENCH_GPU_LAYERS`     | `99`                             | GPU layers to offload (99 = all)                          |
-| `BENCH_KV_TYPE_K`      | `q8_0`                           | KV-cache quantization for K                               |
-| `BENCH_KV_TYPE_V`      | `q8_0`                           | KV-cache quantization for V                               |
-| `BENCH_CPU_THREADS`    | `8`                              | CPU threads for non-GPU layers                            |
-| `BENCH_BATCH_SIZE`     | `2048`                           | Logical batch size                                        |
-| `BENCH_UBATCH_SIZE`    | `512`                            | Physical micro-batch size                                 |
-| `BENCH_PP_TOKENS`      | `128,512,2048`                   | Prompt token counts (PP scenarios)                        |
-| `BENCH_TG_TOKENS`      | `128,512`                        | Generation token counts (TG scenarios)                    |
-| `BENCH_REPETITIONS`    | `3`                              | Repetitions per scenario                                  |
-| `BENCH_OUTPUT_FORMAT`  | `md`                             | Output format: `md`, `json`, `csv`, `sql`                 |
-| `BENCH_RESULTS_DIR`    | `./results`                      | Where result files are written                            |
-| `ROCM_GFX_VERSION`     | `12.0.1`                         | HSA GFX override for RDNA4 (RX 9070 XT)                   |
-| `ROCM_VISIBLE_DEVICES` | `0`                              | AMD GPU index                                             |
-| `SYCL_DEVICE_FILTER`   | `level_zero:gpu:0`               | SYCL device filter                                        |
-| `BENCH_SYCL_DEVICE`    | `SYCL0`                          | SYCL device passed to `--device`                          |
-| `BENCH_VULKAN_DEVICE`  | `Vulkan0`                        | Vulkan device passed to `--device`                        |
-| `AMD_VULKAN_ICD`       | `RADV`                           | Vulkan ICD driver (`RADV` = Mesa, `AMDVLK` = proprietary) |
+### Model
+
+| Variable | Default | Description |
+|---|---|---|
+| `BENCH_MODELS_DIR` | `/home/<user>/.llama_models` | Host directory containing `.gguf` files |
+| `BENCH_MODEL_FILE` | *(required)* | File name of the model to benchmark |
+| `BENCH_CACHE_DIR` | `/home/<user>/.llama_cache` | Model weight cache (speeds up re-runs) |
+
+### Performance
+
+| Variable | Default | Description |
+|---|---|---|
+| `BENCH_GPU_LAYERS` | `99` | GPU layers to offload (99 = all) |
+| `BENCH_KV_TYPE_K` | `q8_0` | KV-cache quantization for K |
+| `BENCH_KV_TYPE_V` | `q8_0` | KV-cache quantization for V |
+| `BENCH_CPU_THREADS` | `8` | CPU threads for non-GPU layers |
+| `BENCH_BATCH_SIZE` | `2048` | Logical batch size |
+| `BENCH_UBATCH_SIZE` | `512` | Physical micro-batch size |
+
+### Multi-GPU split
+
+| Variable | Default | Description |
+|---|---|---|
+| `BENCH_SPLIT_MODE` | `none` | `none` = single GPU · `layer` = split layers+KV · `row` = split rows |
+| `BENCH_TENSOR_SPLIT` | `1,1` | Fraction per GPU — equal split `1,1`, asymmetric e.g. `3,1` |
+| `BENCH_MAIN_GPU` | `0` | Primary GPU index (KV + intermediate results) |
+
+### Benchmark scenarios
+
+| Variable | Default | Description |
+|---|---|---|
+| `BENCH_PP_TOKENS` | `128,512,2048` | Prompt token counts for PP tests (comma-separated) |
+| `BENCH_TG_TOKENS` | `128,512` | Generation token counts for TG tests (comma-separated) |
+| `BENCH_REPETITIONS` | `3` | Repetitions per scenario |
+| `BENCH_OUTPUT_FORMAT` | `md` | Output format: `md`, `json`, `csv`, `sql` |
+| `BENCH_RESULTS_DIR` | `./results` | Where result files are written |
+
+### Backend-specific
+
+| Variable | Default | Description |
+|---|---|---|
+| `ROCM_GFX_VERSION` | `9.0.0` | HSA GFX override — see table below |
+| `ROCM_VISIBLE_DEVICES` | `0` | AMD GPU indices: `0` or `0,1` for dual |
+| `SYCL_DEVICE_FILTER` | `level_zero:gpu:0` | SYCL device filter |
+| `BENCH_SYCL_DEVICE` | `SYCL0` | SYCL device passed to `--device` |
+| `BENCH_VULKAN_DEVICE` | `Vulkan0` | Vulkan device(s): `Vulkan0` or `Vulkan0,Vulkan1` |
+| `AMD_VULKAN_ICD` | `RADV` | Vulkan driver: `RADV` (Mesa) or `AMDVLK` (proprietary) |
+
+#### `ROCM_GFX_VERSION` reference
+
+| GPU | Architecture | Value |
+|---|---|---|
+| MI25 / WX9100 | Vega 10 | `9.0.0` |
+| RX 5700 XT | RDNA1 | `10.1.0` |
+| RX 6800 / 6900 | RDNA2 | `10.3.0` |
+| RX 7900 XT | RDNA3 | `11.0.0` |
+| RX 9070 XT | RDNA4 | `12.0.1` |
 
 ---
 
@@ -74,13 +110,40 @@ Results are written to `results/` as Markdown tables (configurable via
 
 `llama-bench` runs two types of tests per scenario:
 
-| Test                       | Flag   | Measures                                            |
-|----------------------------|--------|-----------------------------------------------------|
+| Test | Flag | Measures |
+|---|---|---|
 | **PP** (prompt processing) | `-p N` | Tokens/s while ingesting the prompt (prefill speed) |
-| **TG** (token generation)  | `-n N` | Tokens/s during autoregressive generation           |
+| **TG** (token generation) | `-n N` | Tokens/s during autoregressive generation |
 
-The scenarios are all combinations of `BENCH_PP_TOKENS × BENCH_TG_TOKENS`, e.g.
-with defaults `128,512,2048 × 128,512` → 6 scenarios × 3 reps = 18 runs.
+The scenarios are all combinations of `BENCH_PP_TOKENS × BENCH_TG_TOKENS`.  
+Example with `128,512,2048 × 128,512` → 6 scenarios × 3 reps = 18 runs.
+
+> **Rule of thumb:** PP speed >> TG speed (PP is parallel, TG is sequential).  
+> TG is the metric that matters most for real-world chat latency.
+
+### Recommended values for large contexts
+
+| ctx-size | BENCH_PP_TOKENS | BENCH_TG_TOKENS |
+|---|---|---|
+| 8 192 | `128,512,2048` | `128,512` |
+| 32 768 | `512,2048,8192` | `128,512` |
+| 131 072 | `512,4096,16384,65536` | `128,512` |
+
+---
+
+## Dual-GPU setup
+
+```dotenv
+# ROCm — two GPUs (e.g. dual MI25 / WX9100)
+ROCM_VISIBLE_DEVICES=0,1
+BENCH_SPLIT_MODE=layer
+BENCH_TENSOR_SPLIT=1,1    # equal split; use 3,1 if GPUs differ in VRAM
+
+# Vulkan — two GPUs
+BENCH_VULKAN_DEVICE=Vulkan0,Vulkan1
+BENCH_SPLIT_MODE=layer
+BENCH_TENSOR_SPLIT=1,1
+```
 
 ---
 
@@ -94,13 +157,13 @@ results/
   bench_combined_20260630_144502.md   # created by bench-all.sh
 ```
 
-Example Markdown output (one row per scenario):
+Example Markdown output:
 
 ```
-| model                               | size     | params  | backend  | ngl  | fa  | mmap  | ...  | test  | t/s             |
-|-------------------------------------|----------|---------|----------|------|-----|-------|------|-------|-----------------|
-| Qwen3-Coder-30B-A3B-Instruct-Q4_K_M | 17.2 GiB | 30.5 B  | ROCm     | 99   | 1   | 1     | ...  | pp512 | 1234.56 ± 12.34 |
-| Qwen3-Coder-30B-A3B-Instruct-Q4_K_M | 17.2 GiB | 30.5 B  | ROCm     | 99   | 1   | 1     | ...  | tg128 | 45.67 ± 0.23    |
+| model        | size     | params | backend | ngl | sm    | ts  | fa | test    | t/s             |
+|--------------|----------|--------|---------|-----|-------|-----|----|---------|-----------------|
+| gpt-oss-20b  | 12.0 GiB | 20.0 B | Vulkan  | 99  | none  | 0   | 1  | pp512   | 1234.56 ± 12.34 |
+| gpt-oss-20b  | 12.0 GiB | 20.0 B | Vulkan  | 99  | none  | 0   | 1  | tg128   |   45.67 ± 0.23  |
 ```
 
 ---
@@ -111,28 +174,27 @@ Example Markdown output (one row per scenario):
 # ROCm
 docker run --rm --device /dev/kfd --device /dev/dri \
   --group-add video --group-add render \
-  ghcr.io/ggml-org/llama.cpp:full-rocm llama-bench --list-devices
+  ghcr.io/ggml-org/llama.cpp:full-rocm --bench --list-devices
 
 # Intel SYCL
 docker run --rm --device /dev/dri \
-  ghcr.io/ggml-org/llama.cpp:full-intel llama-bench --list-devices
+  ghcr.io/ggml-org/llama.cpp:full-intel --bench --list-devices
 
 # Vulkan
 docker run --rm --device /dev/dri \
-  ghcr.io/ggml-org/llama.cpp:full-vulkan llama-bench --list-devices
+  ghcr.io/ggml-org/llama.cpp:full-vulkan --bench --list-devices
 ```
 
 ---
 
 ## Tips
 
-- **Warm-up**: llama-bench performs a warm-up run before each test by default.
-- **Flash Attention**: always enabled (`--flash-attn 1`) — gives significant
-  throughput improvements on all backends.
-- **RDNA4 / RX 9070 XT**: set `ROCM_GFX_VERSION=12.0.1` in `.env`.  If ROCm
-  still errors, try `11.0.0` (RDNA3 fallback).
-- **Multiple GPUs**: to split across two GPUs with ROCm, add
-  `--tensor-split 1,1 --split-mode layer` by editing `bench-rocm.sh`.
-- **KV-cache impact**: try `BENCH_KV_TYPE_K=f16 BENCH_KV_TYPE_V=f16` vs
-  `q8_0/q8_0` to see throughput vs accuracy trade-off at your context length.
-
+- **Auto `.env`**: scripts create `.env` from template automatically on the first run —
+  no manual `cp` needed.
+- **Entrypoint**: `full-*` images use a wrapper; the benchmark subcommand is `--bench`
+  (not `llama-bench` directly).
+- **Flash Attention**: always enabled (`-fa 1`) — significant throughput gain on all backends.
+- **KV-cache trade-off**: try `BENCH_KV_TYPE_K=f16 BENCH_KV_TYPE_V=f16` vs `q8_0/q8_0`
+  to see VRAM vs speed differences at your context length.
+- **Asymmetric split**: if two GPUs have different VRAM (e.g. 16 GiB + 8 GiB),
+  set `BENCH_TENSOR_SPLIT=2,1` instead of `1,1`.

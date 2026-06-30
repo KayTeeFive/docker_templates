@@ -30,6 +30,20 @@ BENCH_KV_TYPE_V=q8_0
 # ── CPU threads (for non-GPU layers, e.g. embedding) ──────────────────────────
 BENCH_CPU_THREADS=8
 
+# ── Multi-GPU split ───────────────────────────────────────────────────────────
+# Split mode: none (single GPU), layer (default, splits layers+KV), row
+BENCH_SPLIT_MODE=none
+#BENCH_SPLIT_MODE=layer
+
+# Fraction of model per GPU — '/'-separated proportions (e.g. 1/1 = equal split).
+# IMPORTANT: llama-bench uses ',' as a sweep separator (= run once per value).
+#            Always use '/' to combine GPUs into ONE run: 1/1, 3/1, etc.
+# Ignored when BENCH_SPLIT_MODE=none.
+BENCH_TENSOR_SPLIT=1/1
+
+# Primary GPU index (used for intermediate results / KV with split-mode=row).
+BENCH_MAIN_GPU=0
+
 # ── Batch sizes ────────────────────────────────────────────────────────────────
 BENCH_BATCH_SIZE=2048
 BENCH_UBATCH_SIZE=512
@@ -51,10 +65,11 @@ BENCH_OUTPUT_FORMAT=md
 
 # ── ROCm / AMD ────────────────────────────────────────────────────────────────
 # GFX version override — needed for RDNA4 (RX 9070 XT = GFX 12.0.1).
-# Try 11.0.0 as fallback for RDNA3.
+# Vega10 (MI25 / WX9100) = 9.0.0 | RDNA3 = 11.0.0 | RDNA4 = 12.0.1
 ROCM_GFX_VERSION=12.0.1
-# GPU index to use (0 = first AMD GPU).
+# GPU indices to expose — single: "0", dual: "0,1"
 ROCM_VISIBLE_DEVICES=0
+#ROCM_VISIBLE_DEVICES=0,1
 
 # ── Intel / SYCL ──────────────────────────────────────────────────────────────
 # Target a specific Level Zero GPU.
@@ -63,8 +78,29 @@ SYCL_DEVICE_FILTER=level_zero:gpu:0
 BENCH_SYCL_DEVICE=SYCL0
 
 # ── Vulkan ────────────────────────────────────────────────────────────────────
-# Vulkan device selector passed to --device (e.g. Vulkan0, Vulkan1).
+# BENCH_VULKAN_DEVICE selects which Vulkan device(s) llama-bench uses.
+# IMPORTANT: llama-bench uses two DIFFERENT separators with different meaning:
+#   ','  = sweep — run the benchmark separately for EACH value (one row per device)
+#   '/'  = combine — run ONE benchmark using ALL listed devices together
+#
+# Single GPU:        Vulkan0
+# Combined multi-GPU: Vulkan1/Vulkan2   (also set BENCH_SPLIT_MODE=layer above,
+#                                        and BENCH_TENSOR_SPLIT with '/' too,
+#                                        e.g. BENCH_TENSOR_SPLIT="1/1")
+# Sweep (separate per-GPU results): Vulkan0,Vulkan1
 BENCH_VULKAN_DEVICE=Vulkan0
+#BENCH_VULKAN_DEVICE=Vulkan1
+#BENCH_VULKAN_DEVICE=Vulkan1/Vulkan2
+
+# GGML_VK_VISIBLE_DEVICES restricts which Vulkan devices are visible to the
+# container at all (by index, comma-separated — this is an env var, not a
+# llama-bench flag, so the usual comma list applies here).
+# Use this to hide an unwanted device (e.g. an iGPU) before BENCH_VULKAN_DEVICE
+# selects among what remains.
+GGML_VK_VISIBLE_DEVICES=
+#GGML_VK_VISIBLE_DEVICES=0
+#GGML_VK_VISIBLE_DEVICES=1,2
+
 # Force RADV (Mesa) Vulkan driver — best for RDNA4.
 # Set to '' (empty) to let the system choose, or to 'AMDVLK' for the proprietary driver.
 AMD_VULKAN_ICD=RADV

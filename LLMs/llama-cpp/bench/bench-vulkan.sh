@@ -44,8 +44,18 @@ BENCH_TG_TOKENS="${BENCH_TG_TOKENS:-128,512}"
 BENCH_REPETITIONS="${BENCH_REPETITIONS:-3}"
 BENCH_OUTPUT_FORMAT="${BENCH_OUTPUT_FORMAT:-md}"
 BENCH_RESULTS_DIR="${BENCH_RESULTS_DIR:-${SCRIPT_DIR}/results}"
-BENCH_VULKAN_DEVICE="${BENCH_VULKAN_DEVICE:-Vulkan0}"
+# BENCH_VULKAN_DEVICE is now OPTIONAL — only set this if you want to pin the
+# run to a SINGLE explicit device. Leave it empty/unset for multi-GPU split
+# benchmarks, so llama-bench can see every Vulkan device and split across them.
+BENCH_VULKAN_DEVICE="${BENCH_VULKAN_DEVICE:-}"
+# Use this instead to restrict *which* devices llama-bench is allowed to see
+# (e.g. to hide the iGPU at index 0 and only use the two discrete cards at
+# index 1 and 2). Comma-separated device indices, no spaces.
+GGML_VK_VISIBLE_DEVICES="${GGML_VK_VISIBLE_DEVICES:-}"
 AMD_VULKAN_ICD="${AMD_VULKAN_ICD:-RADV}"
+BENCH_SPLIT_MODE="${BENCH_SPLIT_MODE:-none}"
+BENCH_TENSOR_SPLIT="${BENCH_TENSOR_SPLIT:-1/1}"
+BENCH_MAIN_GPU="${BENCH_MAIN_GPU:-0}"
 
 # ── validate ──────────────────────────────────────────────────────────────────
 [[ -n "$BENCH_MODEL_FILE" ]] || die "BENCH_MODEL_FILE is not set in .env"
@@ -59,15 +69,46 @@ TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RESULT_FILE="${BENCH_RESULTS_DIR}/bench_${BACKEND}_${TIMESTAMP}.${BENCH_OUTPUT_FORMAT}"
 
 # ── optional image pull ───────────────────────────────────────────────────────
-if [[ "${1:-}" == "--no-cache" ]]; then
+PULL=0; VERBOSE=0
+for _arg in "$@"; do
+    case "$_arg" in
+        --no-cache)        PULL=1 ;;
+        --verbose|-v)      VERBOSE=1 ;;
+    esac
+done
+if (( PULL )); then
     log "Pulling latest image: $IMAGE"
     docker pull "$IMAGE"
 fi
 
+# ── build split flags (-ts separator must be '/', comma triggers separate runs) ─
+SPLIT_FLAGS=(-sm "${BENCH_SPLIT_MODE}")
+if [[ "${BENCH_SPLIT_MODE}" != "none" ]]; then
+    SPLIT_FLAGS+=(-ts "${BENCH_TENSOR_SPLIT}" -mg "${BENCH_MAIN_GPU}")
+fi
+
+# ── build device flag (only pass --device for a single explicit device) ───────
+DEVICE_FLAGS=()
+if [[ -n "$BENCH_VULKAN_DEVICE" ]]; then
+    DEVICE_FLAGS=(--device "${BENCH_VULKAN_DEVICE}")
+fi
+
+# ── build env flags for the container ─────────────────────────────────────────
+ENV_FLAGS=(-e AMD_VULKAN_ICD="${AMD_VULKAN_ICD}")
+if [[ -n "$GGML_VK_VISIBLE_DEVICES" ]]; then
+    ENV_FLAGS+=(-e GGML_VK_VISIBLE_DEVICES="${GGML_VK_VISIBLE_DEVICES}")
+fi
+
+# ── verbose/progress flag ─────────────────────────────────────────────────────
+PROGRESS_FLAGS=()
+(( VERBOSE )) && PROGRESS_FLAGS=(--progress)
+
 # ── run llama-bench ───────────────────────────────────────────────────────────
 log "Backend  : Vulkan"
 log "Image    : $IMAGE"
-log "Device   : ${BENCH_VULKAN_DEVICE}  (AMD_VULKAN_ICD=${AMD_VULKAN_ICD})"
+log "Device   : ${BENCH_VULKAN_DEVICE:-<all visible>}  (AMD_VULKAN_ICD=${AMD_VULKAN_ICD})"
+log "Visible  : ${GGML_VK_VISIBLE_DEVICES:-<not restricted>}"
+log "Split    : mode=${BENCH_SPLIT_MODE}  tensor=${BENCH_TENSOR_SPLIT}  main-gpu=${BENCH_MAIN_GPU}"
 log "Model    : ${BENCH_MODEL_FILE}"
 log "PP tokens: ${BENCH_PP_TOKENS}"
 log "TG tokens: ${BENCH_TG_TOKENS}"
@@ -78,20 +119,22 @@ log "─────────────────────────
 
 docker run --rm \
     --device /dev/dri \
-    -e AMD_VULKAN_ICD="${AMD_VULKAN_ICD}" \
+    "${ENV_FLAGS[@]}" \
     -v "${BENCH_MODELS_DIR}:/models:ro" \
     -v "${BENCH_CACHE_DIR}:/root/.cache" \
     "$IMAGE" \
     --bench \
         -m "/models/${BENCH_MODEL_FILE}" \
-        --device "${BENCH_VULKAN_DEVICE}" \
+        "${DEVICE_FLAGS[@]}" \
         -ngl "${BENCH_GPU_LAYERS}" \
+        "${SPLIT_FLAGS[@]}" \
         -t "${BENCH_CPU_THREADS}" \
-        -b "${BENCH_BATCH_SIZE}" \
+        --batch-size "${BENCH_BATCH_SIZE}" \
         -ub "${BENCH_UBATCH_SIZE}" \
         -ctk "${BENCH_KV_TYPE_K}" \
         -ctv "${BENCH_KV_TYPE_V}" \
-        -fa 1 \
+        -fa on \
+        "${PROGRESS_FLAGS[@]}" \
         -p "${BENCH_PP_TOKENS}" \
         -n "${BENCH_TG_TOKENS}" \
         -r "${BENCH_REPETITIONS}" \
@@ -100,4 +143,3 @@ docker run --rm \
 
 log "──────────────────────────────────────────────────────"
 log "Results saved → ${RESULT_FILE}"
-
