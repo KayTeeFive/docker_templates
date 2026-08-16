@@ -8,6 +8,8 @@
 #    $EDITOR .env                    # set BENCH_MODELS_DIR, BENCH_MODEL_FILE, etc.
 #    ./bench-vulkan.sh               # run benchmark
 #    ./bench-vulkan.sh --no-cache    # pull fresh image before running
+#    ./bench-vulkan.sh --verbose/-v  # pass --verbose to llama-bench
+#    ./bench-vulkan.sh --progress/-p # pass --progress to llama-bench
 # ══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -69,11 +71,12 @@ TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RESULT_FILE="${BENCH_RESULTS_DIR}/bench_${BACKEND}_${TIMESTAMP}.${BENCH_OUTPUT_FORMAT}"
 
 # ── optional image pull ───────────────────────────────────────────────────────
-PULL=0; VERBOSE=0
+PULL=0; VERBOSE=0; PROGRESS=0
 for _arg in "$@"; do
     case "$_arg" in
         --no-cache)        PULL=1 ;;
         --verbose|-v)      VERBOSE=1 ;;
+        --progress|-p)     PROGRESS=1 ;;
     esac
 done
 if (( PULL )); then
@@ -99,9 +102,11 @@ if [[ -n "$GGML_VK_VISIBLE_DEVICES" ]]; then
     ENV_FLAGS+=(-e GGML_VK_VISIBLE_DEVICES="${GGML_VK_VISIBLE_DEVICES}")
 fi
 
-# ── verbose/progress flag ─────────────────────────────────────────────────────
+# ── verbose / progress flags ──────────────────────────────────────────────────
+VERBOSE_FLAGS=()
 PROGRESS_FLAGS=()
-(( VERBOSE )) && PROGRESS_FLAGS=(--progress)
+(( VERBOSE ))  && VERBOSE_FLAGS=(--verbose)
+(( PROGRESS )) && PROGRESS_FLAGS=(--progress)
 
 # ── run llama-bench ───────────────────────────────────────────────────────────
 log "Backend  : Vulkan"
@@ -134,6 +139,7 @@ docker run --rm \
         -ctk "${BENCH_KV_TYPE_K}" \
         -ctv "${BENCH_KV_TYPE_V}" \
         -fa on \
+        "${VERBOSE_FLAGS[@]}" \
         "${PROGRESS_FLAGS[@]}" \
         -p "${BENCH_PP_TOKENS}" \
         -n "${BENCH_TG_TOKENS}" \

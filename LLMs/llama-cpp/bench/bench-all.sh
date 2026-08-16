@@ -8,6 +8,8 @@
 #    ./bench-all.sh               # benchmark ROCm → Intel → Vulkan, then compare
 #    ./bench-all.sh rocm vulkan   # benchmark only specific backends
 #    ./bench-all.sh --no-cache    # pull fresh images first (applies to all)
+#    ./bench-all.sh --verbose/-v  # pass --verbose to llama-bench
+#    ./bench-all.sh --progress/-p # pass --progress to llama-bench
 #
 #  Backends: rocm  intel  vulkan
 # ══════════════════════════════════════════════════════════════════════════════
@@ -38,14 +40,16 @@ mkdir -p "$BENCH_RESULTS_DIR"
 # ── parse CLI args ────────────────────────────────────────────────────────────
 PULL_FLAG=""
 VERBOSE_FLAG=""
+PROGRESS_FLAG=""
 BACKENDS=()
 
 for arg in "$@"; do
     case "$arg" in
         --no-cache)        PULL_FLAG="--no-cache" ;;
         --verbose|-v)      VERBOSE_FLAG="--verbose" ;;
+        --progress|-p)     PROGRESS_FLAG="--progress" ;;
         rocm|intel|vulkan) BACKENDS+=("$arg") ;;
-        *) die "Unknown argument: $arg  (valid: rocm intel vulkan --no-cache --verbose/-v)" ;;
+        *) die "Unknown argument: $arg  (valid: rocm intel vulkan --no-cache --verbose/-v --progress/-p)" ;;
     esac
 done
 
@@ -65,7 +69,7 @@ for backend in "${BACKENDS[@]}"; do
     script="${SCRIPT_DIR}/bench-${backend}.sh"
     [[ -x "$script" ]] || die "Script not found or not executable: $script"
 
-    if bash "$script" $PULL_FLAG $VERBOSE_FLAG; then
+    if bash "$script" $PULL_FLAG $VERBOSE_FLAG $PROGRESS_FLAG; then
         PASSED+=("$backend")
     else
         log "⚠  Backend '${backend}' failed — continuing with remaining backends."
