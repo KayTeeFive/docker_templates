@@ -45,6 +45,7 @@ services:
       LLAMA_ARG_CONT_BATCHING: "${LLAMA_CONT_BATCHING:-true}"
       LLAMA_ARG_KV_OFFLOAD: "${LLAMA_KV_OFFLOAD:-true}"
       LLAMA_ARG_KV_UNIFIED: "${LLAMA_KV_UNIFIED:-true}"
+      LLAMA_ARG_REPACK: "${LLAMA_REPACK:-true}"
       LLAMA_ARG_MMAP: "true"
       LLAMA_ARG_MODELS_DIR: "/models"
 

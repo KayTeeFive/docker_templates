@@ -111,6 +111,11 @@ LLAMA_KV_OFFLOAD=true
 # Single unified KV buffer shared across all sequences (default: enabled if number of slots is auto)
 LLAMA_KV_UNIFIED=true
 
+# Weight repacking — rearranges weight layout for faster matrix-vector multiply.
+# Disable only if you hit a driver/hardware bug or want to save host memory on load.
+# (env: LLAMA_ARG_REPACK | flag: --repack / --no-repack)
+LLAMA_REPACK=true
+
 # ── Persistence ────────────────────────────────────────────────────────────────
 LLAMA_CACHE_DIR=/home/dockeruser/.llama_cache
 WEBUI_DATA=/home/dockeruser/.webui_data
