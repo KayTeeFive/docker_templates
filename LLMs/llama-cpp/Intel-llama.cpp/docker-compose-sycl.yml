@@ -60,6 +60,7 @@ services:
       --gpu-layers ${LLAMA_GPU_LAYERS:-99}
       --host ${LLAMA_HOST_IP:-0.0.0.0}
       --port ${LLAMA_HOST_PORT:-5000}
+      ${LLAMA_LOG_VERBOSITY_FLAG:-}
 
     ports:
       - "${LLAMA_HOST_IP:-127.0.0.1}:${LLAMA_HOST_PORT:-5000}:5000"

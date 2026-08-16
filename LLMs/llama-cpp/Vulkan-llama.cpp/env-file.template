@@ -120,3 +120,14 @@ WEBUI_DATA=/home/dockeruser/.webui_data
 # ── Security ───────────────────────────────────────────────────────────────────
 # Generate with: openssl rand -hex 32
 WEBUI_SECRET_KEY=
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+# Can be overridden at runtime via start-vulkan.sh flags:
+#   (no flag)  → --log-verbosity 3  (info, default)
+#   -v         → --log-verbosity 4  (trace)
+#   -d         → --log-verbosity 5  (debug)
+#   -vv/-vvv   → --log-verbose      (all messages, ∞)
+# Or set manually here:
+#   LLAMA_LOG_VERBOSITY_FLAG=--log-verbosity 3
+#   LLAMA_LOG_VERBOSITY_FLAG=--log-verbose
+
