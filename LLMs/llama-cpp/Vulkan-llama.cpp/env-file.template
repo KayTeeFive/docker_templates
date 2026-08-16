@@ -73,10 +73,13 @@ LLAMA_CONT_BATCHING=true
 LLAMA_GPU_LAYERS=99
 
 # Split the model across multiple GPUs:
-# - none: use one GPU only
-# - layer (default): split layers and KV across GPUs
-# - row: split rows across GPUs
-LLAMA_SPLIT_MODE=layer
+#   - none: use one GPU only
+#   - layer (default): split layers and KV across GPUs (pipelined)
+#   - row: split weight across GPUs by rows (parallelized)
+#   - tensor: split weights and KV across GPUs (parallelized, EXPERIMENTAL)
+# (env: LLAMA_ARG_SPLIT_MODE)
+LLAMA_SPLIT_MODE=tensor
+#LLAMA_SPLIT_MODE=layer
 #LLAMA_SPLIT_MODE=row
 # Fraction of the model to offload to each GPU, comma-separated list of proportions
 LLAMA_TENSOR_SPLIT=1,1
