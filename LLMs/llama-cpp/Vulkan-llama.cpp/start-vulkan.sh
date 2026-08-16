@@ -26,10 +26,9 @@ for _arg in "$@"; do
     esac
 done
 
-#if [[ ! -f .env ]]; then
-#    cp -vf env-file.template .env
-#fi
-cp -vf env-file.template .env
+if [[ ! -f .env ]]; then
+    cp -vf env-file.template .env
+fi
 
 echo "Updating .env file..."
 sed -e "s|/home/dockeruser|${HOME}|g" -i .env
