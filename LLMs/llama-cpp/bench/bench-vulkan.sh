@@ -54,8 +54,8 @@ BENCH_VULKAN_DEVICE="${BENCH_VULKAN_DEVICE:-}"
 # (e.g. to hide the iGPU at index 0 and only use the two discrete cards at
 # index 1 and 2). Comma-separated device indices, no spaces.
 GGML_VK_VISIBLE_DEVICES="${GGML_VK_VISIBLE_DEVICES:-}"
-AMD_VULKAN_ICD="${AMD_VULKAN_ICD:-RADV}"
-BENCH_SPLIT_MODE="${BENCH_SPLIT_MODE:-none}"
+AMD_VULKAN_ICD="${AMD_VULKAN_ICD:-}"
+BENCH_SPLIT_MODE="${BENCH_SPLIT_MODE:-tensor}"
 BENCH_TENSOR_SPLIT="${BENCH_TENSOR_SPLIT:-1/1}"
 BENCH_MAIN_GPU="${BENCH_MAIN_GPU:-0}"
 BENCH_FLASH_ATTN="${BENCH_FLASH_ATTN:-on}"

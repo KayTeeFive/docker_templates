@@ -32,9 +32,9 @@ BENCH_CPU_THREADS=8
 
 # ── Multi-GPU split ───────────────────────────────────────────────────────────
 # Split mode: none (single GPU), layer (default, splits layers+KV), row
-BENCH_SPLIT_MODE=none
+#BENCH_SPLIT_MODE=none
 #BENCH_SPLIT_MODE=layer
-#BENCH_SPLIT_MODE=tensor
+BENCH_SPLIT_MODE=tensor
 
 # Fraction of model per GPU — '/'-separated proportions (e.g. 1/1 = equal split).
 # IMPORTANT: llama-bench uses ',' as a sweep separator (= run once per value).
