@@ -74,6 +74,12 @@ LLAMA_UBATCH_LENGTH=512
 LLAMA_BATCH_LENGTH=2048
 LLAMA_CONT_BATCHING=true
 
+# Flash Attention: on, off, auto (default: auto)
+# 'on'   = always enabled — significant throughput gain on most GPUs
+# 'off'  = disabled (use if you see numerical issues or driver bugs)
+# 'auto' = let llama.cpp decide based on model and hardware capabilities
+LLAMA_FLASH_ATTN=on
+
 # 99 = offload all layers to VRAM (recommended).
 # Set an exact number only if you want to deliberately CPU-offload some layers.
 LLAMA_GPU_LAYERS=99

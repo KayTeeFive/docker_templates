@@ -45,6 +45,13 @@ BENCH_TENSOR_SPLIT=1/1
 # Primary GPU index (used for intermediate results / KV with split-mode=row).
 BENCH_MAIN_GPU=0
 
+# ── Flash Attention ───────────────────────────────────────────────────────────
+# Allowed values: on, off, auto
+# on   = always enabled (significant throughput gain on all backends)
+# off  = disabled
+# auto = let llama-bench decide based on model/hardware
+BENCH_FLASH_ATTN=on
+
 # ── Batch sizes ────────────────────────────────────────────────────────────────
 BENCH_BATCH_SIZE=2048
 BENCH_UBATCH_SIZE=512

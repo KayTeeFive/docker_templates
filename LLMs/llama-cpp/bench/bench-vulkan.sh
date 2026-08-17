@@ -58,6 +58,7 @@ AMD_VULKAN_ICD="${AMD_VULKAN_ICD:-RADV}"
 BENCH_SPLIT_MODE="${BENCH_SPLIT_MODE:-none}"
 BENCH_TENSOR_SPLIT="${BENCH_TENSOR_SPLIT:-1/1}"
 BENCH_MAIN_GPU="${BENCH_MAIN_GPU:-0}"
+BENCH_FLASH_ATTN="${BENCH_FLASH_ATTN:-on}"
 
 # ── validate ──────────────────────────────────────────────────────────────────
 [[ -n "$BENCH_MODEL_FILE" ]] || die "BENCH_MODEL_FILE is not set in .env"
@@ -118,6 +119,7 @@ log "Model    : ${BENCH_MODEL_FILE}"
 log "PP tokens: ${BENCH_PP_TOKENS}"
 log "TG tokens: ${BENCH_TG_TOKENS}"
 log "KV cache : K=${BENCH_KV_TYPE_K}  V=${BENCH_KV_TYPE_V}"
+log "Flash Att: ${BENCH_FLASH_ATTN}"
 log "Reps     : ${BENCH_REPETITIONS}"
 log "Output   : ${RESULT_FILE}"
 log "──────────────────────────────────────────────────────"
@@ -138,7 +140,7 @@ docker run --rm \
         -ub "${BENCH_UBATCH_SIZE}" \
         -ctk "${BENCH_KV_TYPE_K}" \
         -ctv "${BENCH_KV_TYPE_V}" \
-        -fa on \
+        -fa "${BENCH_FLASH_ATTN}" \
         "${VERBOSE_FLAGS[@]}" \
         "${PROGRESS_FLAGS[@]}" \
         -p "${BENCH_PP_TOKENS}" \
