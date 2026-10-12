@@ -79,6 +79,15 @@ ROCM_GFX_VERSION=12.0.1
 ROCM_VISIBLE_DEVICES=0
 #ROCM_VISIBLE_DEVICES=0,1
 
+# ── CUDA / NVIDIA ─────────────────────────────────────────────────────────────
+# Requires the NVIDIA Container Toolkit on the host so `docker run --gpus all`
+# can expose the GPU(s). CUDA_VISIBLE_DEVICES narrows which GPUs the benchmark
+# uses — leave empty to use all GPUs, or set comma-separated indices.
+# Single GPU: "0"   Dual GPU: "0,1"
+CUDA_VISIBLE_DEVICES=
+#CUDA_VISIBLE_DEVICES=0
+#CUDA_VISIBLE_DEVICES=0,1
+
 # ── Intel / SYCL ──────────────────────────────────────────────────────────────
 # Target a specific Level Zero GPU.
 SYCL_DEVICE_FILTER=level_zero:gpu:0

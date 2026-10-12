@@ -5,13 +5,13 @@
 #  Usage:
 #    cp env-file.template .env    # first time only
 #    $EDITOR .env                 # at minimum: BENCH_MODELS_DIR, BENCH_MODEL_FILE
-#    ./bench-all.sh               # benchmark ROCm → Intel → Vulkan, then compare
+#    ./bench-all.sh               # benchmark ROCm → Intel → Vulkan → CUDA, then compare
 #    ./bench-all.sh rocm vulkan   # benchmark only specific backends
 #    ./bench-all.sh --no-cache    # pull fresh images first (applies to all)
 #    ./bench-all.sh --verbose/-v  # pass --verbose to llama-bench
 #    ./bench-all.sh --progress/-p # pass --progress to llama-bench
 #
-#  Backends: rocm  intel  vulkan
+#  Backends: rocm  intel  vulkan  cuda
 # ══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -48,14 +48,14 @@ for arg in "$@"; do
         --no-cache)        PULL_FLAG="--no-cache" ;;
         --verbose|-v)      VERBOSE_FLAG="--verbose" ;;
         --progress|-p)     PROGRESS_FLAG="--progress" ;;
-        rocm|intel|vulkan) BACKENDS+=("$arg") ;;
-        *) die "Unknown argument: $arg  (valid: rocm intel vulkan --no-cache --verbose/-v --progress/-p)" ;;
+        rocm|intel|vulkan|cuda) BACKENDS+=("$arg") ;;
+        *) die "Unknown argument: $arg  (valid: rocm intel vulkan cuda --no-cache --verbose/-v --progress/-p)" ;;
     esac
 done
 
-# Default: run all three backends
+# Default: run all four backends
 if [[ ${#BACKENDS[@]} -eq 0 ]]; then
-    BACKENDS=(rocm intel vulkan)
+    BACKENDS=(rocm intel vulkan cuda)
 fi
 
 # ── run selected backends ─────────────────────────────────────────────────────

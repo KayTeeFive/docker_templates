@@ -1,14 +1,49 @@
 # llama.cpp — Inference Benchmarks
 
 Benchmark suite for measuring **prompt-processing (PP)** and
-**token-generation (TG)** throughput across the three llama.cpp GPU backends:
+**token-generation (TG)** throughput across the llama.cpp GPU backends:
 
 | Script            | Backend                       | Docker image                             |
 |-------------------|-------------------------------|------------------------------------------|
 | `bench-rocm.sh`   | AMD ROCm                      | `ghcr.io/ggml-org/llama.cpp:full-rocm`   |
 | `bench-intel.sh`  | Intel SYCL (Arc / Xe)         | `ghcr.io/ggml-org/llama.cpp:full-intel`  |
 | `bench-vulkan.sh` | Vulkan (AMD / Intel / NVIDIA) | `ghcr.io/ggml-org/llama.cpp:full-vulkan` |
+| `bench-cuda.sh`   | NVIDIA CUDA                   | `ghcr.io/ggml-org/llama.cpp:full-cuda`   |
 | `bench-all.sh`    | all of the above              | —                                        |
+
+> **CUDA note:** `bench-cuda.sh` requires the
+> [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+> on the host so `docker run --gpus all` can expose the GPU(s).
+
+### Installing the NVIDIA Container Toolkit
+
+1. **Install prerequisites and the toolkit repository**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y curl gnupg2
+
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \
+  sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+  sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+```
+
+2. **Install the NVIDIA Container Toolkit**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+```
+
+3. **Configure Docker to use it and restart**
+
+```bash
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
 
 ---
 
@@ -28,6 +63,7 @@ $EDITOR .env
 ./bench-rocm.sh         # AMD ROCm
 ./bench-intel.sh        # Intel SYCL
 ./bench-vulkan.sh       # Vulkan
+./bench-cuda.sh         # NVIDIA CUDA
 
 # All backends sequentially + combined report
 ./bench-all.sh
@@ -94,6 +130,7 @@ Results are written to `results/` as Markdown tables (configurable via
 | `BENCH_SYCL_DEVICE`    | `SYCL0`            | SYCL device passed to `--device`                       |
 | `BENCH_VULKAN_DEVICE`  | `Vulkan0`          | Vulkan device(s): `Vulkan0` or `Vulkan0,Vulkan1`       |
 | `AMD_VULKAN_ICD`       | `RADV`             | Vulkan driver: `RADV` (Mesa) or `AMDVLK` (proprietary) |
+| `CUDA_VISIBLE_DEVICES` | *(all GPUs)*       | NVIDIA GPU indices: empty = all, `0`, or `0,1`         |
 
 #### `ROCM_GFX_VERSION` reference
 
@@ -184,6 +221,10 @@ docker run --rm --device /dev/dri \
 # Vulkan
 docker run --rm --device /dev/dri \
   ghcr.io/ggml-org/llama.cpp:full-vulkan --bench --list-devices
+
+# CUDA (NVIDIA)
+docker run --rm --gpus all \
+  ghcr.io/ggml-org/llama.cpp:full-cuda --bench --list-devices
 ```
 
 ---
